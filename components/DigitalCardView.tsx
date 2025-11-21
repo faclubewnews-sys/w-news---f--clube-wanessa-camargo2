@@ -1,14 +1,26 @@
 
-import React, { useState, useRef } from 'react';
+
+
+import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
 
 declare const html2canvas: any;
 
-export const DigitalCardView: React.FC<{ user: User }> = ({ user }) => {
+interface DigitalCardViewProps {
+    user: User;
+    onUpdateUser: (updatedFields: Partial<User>) => void;
+}
+
+export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdateUser }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [profilePicSrc, setProfilePicSrc] = useState(user.profilePic);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state if user prop changes (though we also update locally to feel instant)
+  useEffect(() => {
+      setProfilePicSrc(user.profilePic);
+  }, [user.profilePic]);
 
   const handleDownload = async () => {
     const cardElement = document.getElementById('digital-card');
@@ -51,7 +63,10 @@ export const DigitalCardView: React.FC<{ user: User }> = ({ user }) => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setProfilePicSrc(e.target?.result as string);
+        const result = e.target?.result as string;
+        setProfilePicSrc(result);
+        // Save to persistent state
+        onUpdateUser({ profilePic: result });
       };
       reader.readAsDataURL(file);
     }
@@ -145,10 +160,11 @@ export const DigitalCardView: React.FC<{ user: User }> = ({ user }) => {
                 </div>
 
                 {/* Middle: Info */}
-                <div className="flex flex-col justify-end pb-1 flex-1 gap-3 z-10 min-w-0">
+                {/* Increased padding to avoid overlap with signature in the bottom right */}
+                <div className="flex flex-col justify-end pb-1 flex-1 gap-3 z-10 min-w-0 pr-32 relative">
                      <div className="flex flex-col">
                         <p className="text-[9px] sm:text-[10px] uppercase tracking-wider mb-0.5 font-bold opacity-90" style={{ color: brandGold, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>Nome</p>
-                        <p className="text-base sm:text-xl font-bold text-white leading-tight uppercase truncate drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] tracking-wide">
+                        <p className="text-base sm:text-xl font-bold text-white leading-tight uppercase drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] tracking-wide break-words">
                             {user.name}
                         </p>
                      </div>
@@ -170,11 +186,12 @@ export const DigitalCardView: React.FC<{ user: User }> = ({ user }) => {
                 </div>
 
                 {/* Right: Signature */}
-                <div className="absolute bottom-[-8px] right-[-8px] z-30">
+                {/* Repositioned and resized to avoid overlap */}
+                <div className="absolute bottom-2 right-3 z-20 pointer-events-none">
                      <img 
                         src="https://i.ibb.co/Y4R8xqy8/Design-sem-nome-13.png"
                         alt="Assinatura"
-                        className="w-28 sm:w-40 opacity-100"
+                        className="w-20 sm:w-32"
                         style={{ 
                             filter: 'invert(1) brightness(2) contrast(1.2) drop-shadow(0 3px 3px rgba(0,0,0,0.9))'
                         }}
@@ -195,7 +212,7 @@ export const DigitalCardView: React.FC<{ user: User }> = ({ user }) => {
           {isDownloading ? 'Gerando Carteirinha...' : 'Baixar Carteirinha'}
         </PrimaryButton>
         <p className="text-xs text-brand-text/60 dark:text-dark-text-soft/60 mt-4 px-4">
-          Toque na foto para personalizar. A imagem é gerada em alta qualidade.
+          Toque na foto para personalizar. A foto selecionada será salva no seu perfil.
         </p>
       </div>
     </div>

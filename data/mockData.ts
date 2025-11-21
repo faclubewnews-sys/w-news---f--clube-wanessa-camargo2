@@ -101,7 +101,7 @@ export interface Notification {
 // Default temporary password for all imported users
 export const TEMP_PASSWORD = 'Wnews@2025';
 
-export const mockUsers: User[] = [
+const defaultUsers: User[] = [
   // 1. PRESIDENTE (MASTER)
   {
     id: 'MASTER-001',
@@ -1103,6 +1103,32 @@ export const mockUsers: User[] = [
     mustChangePassword: true
   }
 ];
+
+// Persistence Logic
+const STORAGE_KEY = 'wnews_mock_users_v1';
+
+export const loadUsersFromStorage = (): User[] => {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            return JSON.parse(stored);
+        }
+    } catch (e) {
+        console.error("Failed to load users from storage", e);
+    }
+    return defaultUsers;
+};
+
+export const saveUsersToStorage = (users: User[]) => {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    } catch (e) {
+        console.error("Failed to save users to storage", e);
+    }
+};
+
+// Initialize mockUsers from storage if available, otherwise use defaults
+export const mockUsers: User[] = loadUsersFromStorage();
 
 // Initialize with some dummy data for demonstration if needed, or keep empty
 export const mockGiveawayEntries: GiveawayEntry[] = [
