@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>W News - Fã Clube Wanessa Camargo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'brand-bg-light': '#FDF8F0', // Soft beige
+            'brand-bg-dark': '#EAE0D5', // Earthy beige
+            'brand-gold': '#CDBA9A',    // Soft, elegant gold
+            'brand-text': '#3C3633',    // Dark, earthy text color (almost black)
+            'brand-accent': '#B08968',  // A warmer, earthy accent
+            // Metamorfose Dark Theme
+            'dark-bg-main': '#302F2B',
+            'dark-bg-secondary': '#5E5137',
+            'dark-icon': '#907451',
+            'dark-text-soft': '#CAA892',
+            'dark-accent': '#CBA153',
+          },
+          fontFamily: {
+            'sans': ['Inter', 'sans-serif'],
+            'montserrat': ['Montserrat', 'sans-serif'],
+          },
+           animation: {
+            'subtle-pulse': 'subtle-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            'subtle-pulse': {
+              '0%, 100%': { opacity: 0.8, transform: 'scale(1)' },
+              '50%': { opacity: 1, transform: 'scale(1.05)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Montserrat:ital,wght@0,500;0,600;0,800;1,500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
