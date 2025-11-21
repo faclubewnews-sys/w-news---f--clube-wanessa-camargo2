@@ -1,11 +1,13 @@
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { ButterflyIcon } from './components/ButterflyIcon';
 import { InputField } from './components/InputField';
 import { PrimaryButton } from './components/PrimaryButton';
 import { Dashboard } from './components/Dashboard';
-import { mockUsers, User } from './data/mockData';
+import { mockUsers, User, saveUsersToStorage } from './data/mockData';
 import { ContactModal } from './components/ContactModal';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 import { ForgotPasswordModal } from './components/ForgotPasswordModal';
@@ -80,9 +82,16 @@ function App() {
 
   const handlePasswordChanged = (newPassword: string) => {
       if (pendingUser) {
-          // Update the user in the mock data (in a real app this would be an API call)
+          // Update user object
           pendingUser.password = newPassword;
           pendingUser.mustChangePassword = false;
+
+          // Persist changes to local storage via mockData helper
+          const userIndex = mockUsers.findIndex(u => u.id === pendingUser.id);
+          if (userIndex !== -1) {
+              mockUsers[userIndex] = pendingUser;
+              saveUsersToStorage(mockUsers);
+          }
           
           // Log the user in
           setLoggedInUser(pendingUser);
@@ -102,46 +111,45 @@ function App() {
     setLoggedInUser(null);
   };
 
-  // Handle Forgot Password Logic
-  const handleSendResetLink = (email: string) => {
-      const user = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-      
-      if (user) {
-          // Generate a simple mock token
-          const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-          user.resetToken = token;
-          
-          // Determine where to send the email
-          let sentToEmail = user.email;
-          if (user.email === 'heitor.lima@wnews.com') {
-              sentToEmail = 'heitor.pinheiro.lima@gmail.com';
-          } else if (user.email === 'lucas.oliveira@wnews.com') {
-              sentToEmail = 'luquinhasrocha@hotmail.com';
-          }
-          
-          // Simulate email sending
-          const resetLink = `${window.location.origin}?resetToken=${token}`;
-          
-          alert(`[SIMULAÇÃO DE E-MAIL]\n\nPara: ${sentToEmail}\nAssunto: Redefinição de Senha - W News\n\nClique no link para redefinir sua senha:\n${resetLink}`);
-      } else {
-           // Security best practice: Don't reveal if email exists or not, but for this mock app we act like we sent it.
-           alert(`Se o e-mail ${email} estiver cadastrado, você receberá um link de redefinição em instantes.`);
-      }
+  // Handle Forgot Password Logic - NOW JUST A MESSAGE
+  const handleForgotPasswordClose = () => {
       setForgotPasswordOpen(false);
   };
 
-  // Handle Reset Password Logic (from Link)
+  // Handle Reset Password Logic (from Link - kept for Admin reset flows if needed, but public flow is now message only)
   const handleResetPasswordSubmit = (newPassword: string) => {
       if (resettingUser) {
           resettingUser.password = newPassword;
           resettingUser.mustChangePassword = false;
           resettingUser.resetToken = undefined; // Expire token immediately
 
+          // Persist
+          const userIndex = mockUsers.findIndex(u => u.id === resettingUser.id);
+          if (userIndex !== -1) {
+              mockUsers[userIndex] = resettingUser;
+              saveUsersToStorage(mockUsers);
+          }
+
           alert("Senha alterada com sucesso! Você pode fazer login agora.");
           setResettingUser(null);
           // Clean URL
           window.history.replaceState({}, document.title, "/");
       }
+  };
+
+  // Function to handle updates from child components (like Card photo or profile edits)
+  const handleUserUpdate = (updatedFields: Partial<User>) => {
+    if (!loggedInUser) return;
+
+    const updatedUser = { ...loggedInUser, ...updatedFields };
+    setLoggedInUser(updatedUser);
+
+    // Persist to storage
+    const userIndex = mockUsers.findIndex(u => u.id === loggedInUser.id);
+    if (userIndex !== -1) {
+        mockUsers[userIndex] = updatedUser;
+        saveUsersToStorage(mockUsers);
+    }
   };
 
   if (loggedInUser) {
@@ -153,6 +161,7 @@ function App() {
           theme={theme} 
           onToggleTheme={toggleTheme}
           onContactClick={() => setContactModalOpen(true)}
+          onUserUpdate={handleUserUpdate}
         />
         <ContactModal 
           isOpen={isContactModalOpen} 
@@ -256,12 +265,11 @@ function App() {
       {/* Forgot Password Modal */}
       {isForgotPasswordOpen && (
           <ForgotPasswordModal 
-            onClose={() => setForgotPasswordOpen(false)}
-            onSendLink={handleSendResetLink}
+            onClose={handleForgotPasswordClose}
           />
       )}
 
-      {/* Reset Password Modal (From Link) */}
+      {/* Reset Password Modal (From Link - still used if admin resets via link) */}
       {resettingUser && (
           <ResetPasswordModal 
             user={resettingUser}
