@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { User, mockNotifications } from '../data/mockData';
 import { Header } from './Header';
@@ -90,7 +92,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onT
     let viewComponent;
     switch (activeView) {
       case 'profile':
-        viewComponent = <UserCard user={user} currentUser={user} />;
+        viewComponent = <UserCard user={user} currentUser={user} onUpdateUser={onUserUpdate} />;
         break;
       case 'card':
         viewComponent = <DigitalCardView user={user} onUpdateUser={onUserUpdate} />;

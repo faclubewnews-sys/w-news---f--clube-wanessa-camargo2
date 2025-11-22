@@ -1,6 +1,8 @@
 
 
-import React, { useState, useMemo } from 'react';
+
+
+import React, { useState, useMemo, useRef } from 'react';
 import { User } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
 import { InstagramIcon, TwitterIcon, FacebookIcon, TiktokIcon, LastfmIcon } from './icons/SocialIcons';
@@ -8,6 +10,7 @@ import { InstagramIcon, TwitterIcon, FacebookIcon, TiktokIcon, LastfmIcon } from
 interface UserCardProps {
   user: User;
   currentUser: User;
+  onUpdateUser?: (updatedFields: Partial<User>) => void;
 }
 
 interface EditableFieldProps {
@@ -50,7 +53,7 @@ const Section: React.FC<{title: string, children: React.ReactNode, hasPendingCha
     </div>
 );
 
-export const UserCard: React.FC<UserCardProps> = ({ user, currentUser }) => {
+export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateUser }) => {
   // Initialize state, migrating address to street for display if needed
   const [userData, setUserData] = useState(() => {
       const initial = { ...user };
@@ -59,6 +62,8 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser }) => {
       }
       return initial;
   });
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = user.id === currentUser.id;
   const canMasterEdit = currentUser.role === 'master';
@@ -95,6 +100,28 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser }) => {
       ...prev,
       socials: { ...prev.socials, [field]: value },
     }));
+  };
+  
+  const handlePhotoClick = () => {
+      if (isOwnProfile || canMasterEdit) {
+          fileInputRef.current?.click();
+      }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setUserData(prev => ({ ...prev, profilePic: result }));
+        // Propagate change upwards to sync with digital card
+        if (onUpdateUser) {
+            onUpdateUser({ profilePic: result });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const hasPendingChanges = user.pendingChanges && Object.keys(user.pendingChanges).length > 0;
@@ -183,14 +210,30 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser }) => {
 
   return (
     <div>
+         <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+            aria-hidden="true"
+        />
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6">
-            <div className="relative">
+            <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
                 <img src={userData.profilePic} alt={`Foto de ${userData.name}`} className="w-24 h-24 rounded-full object-cover ring-4 ring-brand-gold/50 dark:ring-dark-accent/50" />
-                { (isOwnProfile || canMasterEdit) && 
-                    <button className="absolute bottom-0 right-0 bg-brand-text dark:bg-dark-accent text-white rounded-full p-1.5 hover:opacity-80 transition-opacity">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
-                    </button>
-                }
+                { (isOwnProfile || canMasterEdit) && (
+                     <>
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <button className="absolute bottom-0 right-0 bg-brand-text dark:bg-dark-accent text-white rounded-full p-1.5 hover:opacity-80 transition-opacity shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
+                        </button>
+                    </>
+                )}
             </div>
             <div className="text-center sm:text-left">
               <h2 className="text-2xl font-bold text-brand-text dark:text-dark-accent">{userData.name}</h2>

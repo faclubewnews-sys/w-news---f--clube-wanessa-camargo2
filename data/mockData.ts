@@ -1105,7 +1105,7 @@ const defaultUsers: User[] = [
 ];
 
 // Persistence Logic
-const STORAGE_KEY = 'wnews_mock_users_v1';
+const STORAGE_KEY = 'wnews_mock_users_v4';
 
 export const loadUsersFromStorage = (): User[] => {
     try {

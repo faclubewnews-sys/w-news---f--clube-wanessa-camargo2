@@ -1,11 +1,14 @@
 
 
+
+
 import React from 'react';
 import { User, mockUsers } from '../data/mockData';
 import { ActiveView } from './Dashboard';
 import { UserCircleIcon, CardIcon, StarIcon, ShieldIcon, OuvidoriaIcon, TicketIcon, MegaphoneIcon } from './icons/UiIcons';
 import { WhatsAppIcon, InstagramIcon, TwitterIcon, FacebookIcon, TiktokIcon } from './icons/SocialIcons';
 import { ButterflyIcon } from './ButterflyIcon';
+import { CommunityGallery } from './CommunityGallery';
 
 interface HomeProps {
     user: User;
@@ -108,7 +111,10 @@ export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, th
                 )}
             </div>
 
-            <div className="w-full max-w-2xl mt-6 p-4 rounded-xl bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition-colors duration-300 shadow-lg">
+            {/* New Community Gallery Section */}
+            <CommunityGallery currentUser={user} />
+
+            <div className="w-full max-w-2xl mt-10 p-4 rounded-xl bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition-colors duration-300 shadow-lg">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-brand-text/60 dark:text-dark-text-soft/60">
                     Siga nossas Redes Oficiais
                 </h3>
