@@ -43,7 +43,9 @@ function App() {
     const resetToken = params.get('resetToken');
 
     if (resetToken) {
-        const user = mockUsers.find(u => u.resetToken === resetToken);
+        // Ensure we check against fresh data
+        const freshUsers = refreshUsersFromStorage();
+        const user = freshUsers.find(u => u.resetToken === resetToken);
         if (user) {
             setResettingUser(user);
         } else {
@@ -144,12 +146,11 @@ function App() {
     if (!loggedInUser) return;
 
     // 1. Update the loggedInUser state locally
-    // We perform a shallow merge, but if updatedFields contains 'pendingChanges', it will overwrite the existing one correctly.
-    // If it contains direct fields (like profilePic from a Master update), those update too.
     const updatedUser = { ...loggedInUser, ...updatedFields };
     setLoggedInUser(updatedUser);
 
     // 2. Persist to global storage array and LocalStorage using the helper
+    // This is the CRITICAL step for photo updates to be seen by others.
     updateUserInStorage(updatedUser);
 
     // 3. Trigger global refresh for components listening to data changes (e.g. CommunityGallery)
@@ -191,7 +192,7 @@ function App() {
       <div className="absolute top-6 right-6">
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-full text-brand-gold dark:text-dark-accent bg-brand-bg-light/50 dark:bg-dark-bg-secondary hover:bg-brand-bg-dark/50 dark:hover:bg-dark-icon transition-colors duration-300"
+          className="p-2 rounded-full text-brand-gold dark:text-dark-accent bg-brand-bg-light/50 dark:hover:bg-dark-icon transition-colors duration-300"
           aria-label={`Mudar para o tema ${theme === 'light' ? 'escuro' : 'claro'}`}
         >
           {theme === 'light' ? (
