@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React from 'react';
 import { User, mockUsers } from '../data/mockData';
 import { ActiveView } from './Dashboard';
@@ -17,6 +11,7 @@ interface HomeProps {
     onNavigate: (view: ActiveView) => void;
     onContactClick: () => void;
     theme: string;
+    lastUpdate: number;
 }
 
 interface NavItemProps {
@@ -36,7 +31,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, onClick }) => (
   </button>
 );
 
-export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, theme }) => {
+export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, theme, lastUpdate }) => {
     const logoShadow = theme === 'light' 
         ? 'drop-shadow(0 8px 20px rgba(176, 137, 104, 0.2))' // Warm shadow using brand-accent
         : 'drop-shadow(0 8px 25px rgba(203, 161, 83, 0.25))'; // Gold glow using dark-accent
@@ -114,7 +109,7 @@ export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, th
             </div>
 
             {/* New Community Gallery Section */}
-            <CommunityGallery currentUser={user} />
+            <CommunityGallery currentUser={user} lastUpdate={lastUpdate} />
 
             <div className="w-full max-w-2xl mt-10 p-4 rounded-xl bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition-colors duration-300 shadow-lg">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-brand-text/60 dark:text-dark-text-soft/60">

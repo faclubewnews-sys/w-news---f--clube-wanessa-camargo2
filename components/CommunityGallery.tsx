@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { User, mockUsers } from '../data/mockData';
 import { ButterflyIcon } from './ButterflyIcon';
@@ -6,14 +5,16 @@ import { PrimaryButton } from './PrimaryButton';
 
 interface CommunityGalleryProps {
   currentUser: User;
+  lastUpdate?: number;
 }
 
-export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser }) => {
+export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser, lastUpdate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
 
   // Filter logic: Active members only, exclude current user from grid if desired (optional, keeping for now), apply search
+  // Depends on lastUpdate to refresh when mockUsers changes
   const activeMembers = useMemo(() => {
     return mockUsers.filter(user => {
       if (user.status !== 'Ativo') return false;
@@ -26,12 +27,12 @@ export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser 
 
       return matchesSearch && matchesCity;
     });
-  }, [searchTerm, selectedCity]);
+  }, [searchTerm, selectedCity, lastUpdate]);
 
   const uniqueCities = useMemo(() => {
     const cities = new Set(mockUsers.filter(u => u.status === 'Ativo').map(u => u.city));
     return Array.from(cities).sort();
-  }, []);
+  }, [lastUpdate]);
 
   return (
     <div className="w-full mt-10 animate-fade-in">

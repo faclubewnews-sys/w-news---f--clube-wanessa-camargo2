@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
@@ -164,9 +163,9 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
                       {/* Text Info Area */}
                       <div className="flex flex-col justify-end h-full flex-1 ml-[5%] pb-[1%] relative z-10">
                            {/* Name */}
-                           <div className="mb-[6%]">
+                           <div className="mb-[6%] max-w-[70%]">
                               <p className="uppercase tracking-wider font-bold opacity-90" style={{ color: brandGold, fontSize: 'clamp(8px, 1.5vw, 12px)', marginBottom: '0.5%' }}>Nome</p>
-                              <p className="font-bold text-white leading-tight uppercase drop-shadow-md tracking-wide break-words line-clamp-2" style={{ fontSize: 'clamp(12px, 3.5vw, 24px)' }}>
+                              <p className="font-bold text-white leading-none uppercase drop-shadow-md tracking-wide break-words line-clamp-2" style={{ fontSize: 'clamp(12px, 3.2vw, 24px)' }}>
                                   {user.name}
                               </p>
                            </div>

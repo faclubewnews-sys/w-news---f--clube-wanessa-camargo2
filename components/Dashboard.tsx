@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { User, mockNotifications } from '../data/mockData';
 import { Header } from './Header';
@@ -29,11 +22,12 @@ interface DashboardProps {
   onToggleTheme: () => void;
   onContactClick: () => void;
   onUserUpdate: (updatedFields: Partial<User>) => void;
+  lastUpdate: number;
 }
 
 export type ActiveView = 'home' | 'profile' | 'management' | 'card' | 'camarim' | 'wanessa' | 'ouvidoria' | 'sorteios' | 'push';
 
-export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onToggleTheme, onContactClick, onUserUpdate }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onToggleTheme, onContactClick, onUserUpdate, lastUpdate }) => {
   const [activeView, setActiveView] = useState<ActiveView>('home');
   const [blockingNotifications, setBlockingNotifications] = useState<typeof mockNotifications>([]);
 
@@ -88,7 +82,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onT
     const handleGoBack = () => setActiveView('home');
 
     if (activeView === 'home') {
-      return <Home user={user} onNavigate={handleNavigate} onContactClick={onContactClick} theme={theme} />;
+      return <Home user={user} onNavigate={handleNavigate} onContactClick={onContactClick} theme={theme} lastUpdate={lastUpdate} />;
     }
 
     let viewComponent;
