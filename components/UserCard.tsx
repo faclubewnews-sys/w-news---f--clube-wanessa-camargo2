@@ -1,8 +1,4 @@
-
-
-
-
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { User } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
 import { InstagramIcon, TwitterIcon, FacebookIcon, TiktokIcon, LastfmIcon } from './icons/SocialIcons';
@@ -63,6 +59,11 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       return initial;
   });
   
+  // Reset form state when user prop changes
+  useEffect(() => {
+      setUserData({ ...user });
+  }, [user]);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = user.id === currentUser.id;
@@ -103,7 +104,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   };
   
   const handlePhotoClick = () => {
-      if (isOwnProfile || canMasterEdit) {
+      if (isOwnProfile || canMasterEdit || currentUser.role === 'admin') {
           fileInputRef.current?.click();
       }
   };
@@ -114,14 +115,59 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
+        // Only update local state for preview. 
+        // Do NOT call onUpdateUser yet. The user must click "Save/Submit" to persist.
         setUserData(prev => ({ ...prev, profilePic: result }));
-        // Propagate change upwards to sync with digital card
-        if (onUpdateUser) {
-            onUpdateUser({ profilePic: result });
-        }
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleSaveChanges = () => {
+      if (!onUpdateUser) return;
+
+      if (currentUser.role === 'master') {
+          // Master saves directly
+          onUpdateUser(userData);
+          alert("Dados atualizados com sucesso!");
+      } else {
+          // Members/Admins send to pending changes
+          const changes: Partial<User> = {};
+          
+          // Compare top-level fields
+          (Object.keys(userData) as Array<keyof User>).forEach(key => {
+              if (key === 'socials' || key === 'pendingChanges') return;
+              if (JSON.stringify(userData[key]) !== JSON.stringify(user[key])) {
+                  // @ts-ignore
+                  changes[key] = userData[key];
+              }
+          });
+
+          // Compare Socials
+          const socialChanges: any = {};
+          let hasSocialChanges = false;
+          (Object.keys(userData.socials) as Array<keyof typeof userData.socials>).forEach(key => {
+              if (userData.socials[key] !== user.socials[key]) {
+                  socialChanges[key] = userData.socials[key];
+                  hasSocialChanges = true;
+              }
+          });
+
+          if (hasSocialChanges) {
+              changes.socials = socialChanges;
+          }
+
+          if (Object.keys(changes).length > 0) {
+              // Merge with existing pending changes if any
+              const newPendingChanges = { ...user.pendingChanges, ...changes };
+              onUpdateUser({ pendingChanges: newPendingChanges });
+              alert("Suas alterações foram enviadas para aprovação do Presidente.");
+              // Revert local view to original until approved (optional, but keeps UI consistent with official data)
+              // setUserData({ ...user }); 
+          } else {
+              alert("Nenhuma alteração detectada.");
+          }
+      }
   };
 
   const hasPendingChanges = user.pendingChanges && Object.keys(user.pendingChanges).length > 0;
@@ -200,7 +246,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
 
         {showSaveChanges && (
             <div className="flex justify-end mt-6">
-                <PrimaryButton type="submit">
+                <PrimaryButton onClick={handleSaveChanges}>
                   {currentUser.role !== 'master' ? 'Enviar para Aprovação' : 'Salvar Alterações'}
                 </PrimaryButton>
             </div>
@@ -220,8 +266,9 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
         />
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6">
             <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
+                {/* Display userData.profilePic to show the preview of uploaded file before saving */}
                 <img src={userData.profilePic} alt={`Foto de ${userData.name}`} className="w-24 h-24 rounded-full object-cover ring-4 ring-brand-gold/50 dark:ring-dark-accent/50" />
-                { (isOwnProfile || canMasterEdit) && (
+                { (isOwnProfile || canMasterEdit || currentUser.role === 'admin') && (
                      <>
                         <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -236,11 +283,16 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
                 )}
             </div>
             <div className="text-center sm:text-left">
-              <h2 className="text-2xl font-bold text-brand-text dark:text-dark-accent">{userData.name}</h2>
-              <p className="text-sm text-brand-text/70 dark:text-dark-text-soft">ID: {userData.id}</p>
+              <h2 className="text-2xl font-bold text-brand-text dark:text-dark-accent">{user.name}</h2>
+              <p className="text-sm text-brand-text/70 dark:text-dark-text-soft">ID: {user.id}</p>
                {hasPendingChanges && !isOwnProfile && (
                 <div className="mt-2 text-xs font-semibold bg-yellow-200 text-yellow-800 px-2 py-1 rounded-md inline-block">
                   Aprovação Pendente
+                </div>
+              )}
+               {hasPendingChanges && isOwnProfile && (
+                <div className="mt-2 text-xs font-semibold bg-yellow-200 text-yellow-800 px-2 py-1 rounded-md inline-block">
+                   Suas alterações estão aguardando aprovação.
                 </div>
               )}
             </div>

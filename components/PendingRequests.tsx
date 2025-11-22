@@ -1,40 +1,107 @@
 import React, { useState, useMemo } from 'react';
-import { User, mockUsers } from '../data/mockData';
+import { User, mockUsers, saveUsersToStorage } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
 
 interface PendingRequestsProps {
   currentUser: User;
+  onUpdate?: () => void; // Callback to refresh parent if needed
 }
 
-const DetailRow: React.FC<{ label: string, oldValue: any, newValue: any }> = ({ label, oldValue, newValue }) => (
-    <div className="grid grid-cols-3 gap-2 py-2 border-b border-brand-gold/10 dark:border-dark-icon/20">
+const DetailRow: React.FC<{ label: string, oldValue: any, newValue: any, isImage?: boolean }> = ({ label, oldValue, newValue, isImage }) => (
+    <div className="grid grid-cols-3 gap-2 py-2 border-b border-brand-gold/10 dark:border-dark-icon/20 items-center">
         <span className="text-xs font-semibold text-brand-text/70 dark:text-dark-text-soft/70 col-span-1">{label}</span>
-        <span className="text-sm text-gray-500 line-through col-span-1">{oldValue || 'Vazio'}</span>
-        <span className="text-sm text-green-600 font-semibold col-span-1">{newValue || 'Vazio'}</span>
+        {isImage ? (
+             <div className="col-span-1 flex flex-col items-center">
+                 <span className="text-[10px] mb-1">Anterior</span>
+                 <img src={oldValue} alt="Antigo" className="w-12 h-12 rounded-full object-cover opacity-50" />
+             </div>
+        ) : (
+             <span className="text-sm text-gray-500 line-through col-span-1 truncate" title={oldValue}>{oldValue || 'Vazio'}</span>
+        )}
+        
+        {isImage ? (
+            <div className="col-span-1 flex flex-col items-center">
+                 <span className="text-[10px] mb-1">Novo</span>
+                 <img src={newValue} alt="Novo" className="w-16 h-16 rounded-full object-cover border-2 border-green-500" />
+            </div>
+        ) : (
+            <span className="text-sm text-green-600 font-semibold col-span-1 truncate" title={newValue}>{newValue || 'Vazio'}</span>
+        )}
     </div>
 );
 
-export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser }) => {
+export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, onUpdate }) => {
     const [selectedRequest, setSelectedRequest] = useState<User | null>(null);
+
+    // Force a re-evaluation when we update local storage (basic trigger)
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const pendingUsers = useMemo(() => {
         return mockUsers.filter(u => u.pendingChanges && Object.keys(u.pendingChanges).length > 0);
-    }, []);
+    }, [refreshKey]);
 
     const canManage = currentUser.role === 'master';
+
+    const handleApprove = () => {
+        if (!selectedRequest || !selectedRequest.pendingChanges) return;
+
+        const targetUserIndex = mockUsers.findIndex(u => u.id === selectedRequest.id);
+        if (targetUserIndex === -1) return;
+
+        // 1. Merge Changes
+        const pending = selectedRequest.pendingChanges;
+        const updatedUser = { ...mockUsers[targetUserIndex], ...pending };
+        
+        // 2. Clear Pending Flag
+        updatedUser.pendingChanges = undefined;
+
+        // 3. Save to Mock Data (Official Record)
+        mockUsers[targetUserIndex] = updatedUser;
+        saveUsersToStorage(mockUsers);
+
+        // 4. Cleanup UI
+        alert(`Alterações de ${updatedUser.name} aprovadas com sucesso!`);
+        setSelectedRequest(null);
+        setRefreshKey(prev => prev + 1);
+        if (onUpdate) onUpdate();
+        
+        // Force reload to ensure global state (Header pics etc) updates if needed
+        // In a real app, context would handle this, here we trigger App re-render via callback or simple refresh
+        window.location.reload(); 
+    };
+
+    const handleReject = () => {
+        if (!selectedRequest) return;
+
+        const targetUserIndex = mockUsers.findIndex(u => u.id === selectedRequest.id);
+        if (targetUserIndex === -1) return;
+
+        // Just clear the pending flag without merging
+        mockUsers[targetUserIndex].pendingChanges = undefined;
+        saveUsersToStorage(mockUsers);
+
+        alert(`Solicitação de ${selectedRequest.name} rejeitada.`);
+        setSelectedRequest(null);
+        setRefreshKey(prev => prev + 1);
+        if (onUpdate) onUpdate();
+    };
 
     const renderChanges = (user: User) => {
         if (!user.pendingChanges) return null;
         const changes = [];
         for (const key in user.pendingChanges) {
             if (key === 'socials') {
+                 // @ts-ignore
                  const socialChanges = user.pendingChanges.socials;
                  if(socialChanges) {
                     for (const socialKey in socialChanges) {
                         changes.push(<DetailRow key={`social-${socialKey}`} label={`Social (${socialKey})`} oldValue={user.socials?.[socialKey as keyof typeof user.socials]} newValue={socialChanges[socialKey as keyof typeof socialChanges]} />);
                     }
                  }
+            } else if (key === 'profilePic') {
+                 changes.push(<DetailRow key={key} label="Foto de Perfil" oldValue={user.profilePic} newValue={user.pendingChanges.profilePic} isImage={true} />);
             } else {
+                 // @ts-ignore
                  changes.push(<DetailRow key={key} label={key} oldValue={user[key as keyof User]} newValue={user.pendingChanges[key as keyof typeof user.pendingChanges]} />);
             }
         }
@@ -62,7 +129,7 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser })
                                         {user.name}
                                     </td>
                                     <td className="p-3 text-xs text-brand-text/80 dark:text-dark-text-soft hidden md:table-cell">
-                                        {Object.keys(user.pendingChanges || {}).join(', ')}
+                                        {Object.keys(user.pendingChanges || {}).map(k => k === 'profilePic' ? 'Foto' : k).join(', ')}
                                     </td>
                                     <td className="p-3">
                                         <button onClick={() => setSelectedRequest(user)} className="text-sm font-semibold text-brand-accent dark:text-dark-accent hover:underline">
@@ -82,7 +149,7 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser })
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelectedRequest(null)}>
                      <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Analisar Alteração</h3>
-                        <div className="grid grid-cols-3 gap-2 font-bold mb-2 text-sm">
+                        <div className="grid grid-cols-3 gap-2 font-bold mb-2 text-sm border-b border-brand-gold/20 pb-2">
                             <span>Campo</span>
                             <span>Dado Atual</span>
                             <span>Dado Solicitado</span>
@@ -92,8 +159,8 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser })
                         </div>
                         {canManage && (
                              <div className="mt-6 flex justify-end gap-4">
-                                 <button onClick={() => setSelectedRequest(null)} className="px-4 py-2 rounded-md text-sm font-semibold bg-gray-200 dark:bg-gray-600 hover:opacity-80">Reprovar</button>
-                                <PrimaryButton onClick={() => setSelectedRequest(null)}>Aprovar</PrimaryButton>
+                                 <button onClick={handleReject} className="px-4 py-2 rounded-md text-sm font-semibold bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-200">Reprovar</button>
+                                <PrimaryButton onClick={handleApprove}>Aprovar Alterações</PrimaryButton>
                             </div>
                         )}
                      </div>

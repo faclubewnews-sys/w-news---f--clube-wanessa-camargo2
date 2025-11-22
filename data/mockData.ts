@@ -1,5 +1,3 @@
-
-
 export interface User {
   id: string;
   email: string;
@@ -28,8 +26,8 @@ export interface User {
   profilePic: string;
   cardId: string;
   status: 'Ativo' | 'Pendente' | 'Desativado';
-  // Updated: Removed 'email' from Omit so it can be tracked in pending changes
-  pendingChanges?: Partial<Omit<User, 'id' | 'role' | 'password'>>;
+  // Updated: pendingChanges can now include profilePic
+  pendingChanges?: Partial<User>; 
   whatsapp?: string;
   mustChangePassword?: boolean; // New field to force password change
   resetToken?: string; // Token for password recovery link
@@ -1105,7 +1103,7 @@ const defaultUsers: User[] = [
 ];
 
 // Persistence Logic
-const STORAGE_KEY = 'wnews_mock_users_v4';
+const STORAGE_KEY = 'wnews_mock_users_v5';
 
 export const loadUsersFromStorage = (): User[] => {
     try {

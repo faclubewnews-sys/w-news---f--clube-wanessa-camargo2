@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { ButterflyIcon } from './components/ButterflyIcon';
 import { InputField } from './components/InputField';
@@ -142,17 +136,21 @@ function App() {
       }
   };
 
-  // Function to handle updates from child components (like Card photo or profile edits)
+  // Function to handle updates from child components
+  // This is now smarter: it handles partial updates (pendingChanges) AND direct updates.
   const handleUserUpdate = (updatedFields: Partial<User>) => {
     if (!loggedInUser) return;
 
+    // 1. Update the loggedInUser state locally
+    // We perform a shallow merge, but if updatedFields contains 'pendingChanges', it will overwrite the existing one correctly.
+    // If it contains direct fields (like profilePic from a Master update), those update too.
     const updatedUser = { ...loggedInUser, ...updatedFields };
     setLoggedInUser(updatedUser);
 
-    // Persist to storage
+    // 2. Persist to global storage array and LocalStorage
     const userIndex = mockUsers.findIndex(u => u.id === loggedInUser.id);
     if (userIndex !== -1) {
-        mockUsers[userIndex] = updatedUser;
+        mockUsers[userIndex] = { ...mockUsers[userIndex], ...updatedFields };
         saveUsersToStorage(mockUsers);
     }
   };
