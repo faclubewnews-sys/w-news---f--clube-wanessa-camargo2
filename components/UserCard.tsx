@@ -171,24 +171,18 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   const handleSaveChanges = () => {
       if (!onUpdateUser) return;
 
+      // 1. DETECT PHOTO CHANGES (Global & Immediate)
+      // We send this separately if changed, ensuring it updates for everyone instantly
       let hasPhotoChanged = userData.profilePic !== user.profilePic;
+
+      // 2. DETECT TEXT CHANGES
       let hasTextChanged = false;
-
-      // 1. HANDLE PHOTO UPDATE (Global & Immediate)
-      // CRITICAL FIX: Photo updates bypass pending logic and are saved immediately
-      // to the global user store so they propagate to everyone instantly.
-      if (hasPhotoChanged) {
-          onUpdateUser({ profilePic: userData.profilePic });
-      }
-
-      // 2. HANDLE TEXT DATA (Role Dependent)
-      // Check text fields
-      const textChanges: Partial<User> = {};
+      const textUpdates: Partial<User> = {};
       (Object.keys(userData) as Array<keyof User>).forEach(key => {
           if (key === 'socials' || key === 'pendingChanges' || key === 'profilePic' || key === 'mustChangePassword' || key === 'resetToken' || key === 'lastModified') return;
           if (JSON.stringify(userData[key]) !== JSON.stringify(user[key])) {
               // @ts-ignore
-              textChanges[key] = userData[key];
+              textUpdates[key] = userData[key];
               hasTextChanged = true;
           }
       });
@@ -205,32 +199,50 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       });
 
       if (hasSocialChanges) {
-          textChanges.socials = socialChanges;
+          textUpdates.socials = socialChanges;
       }
 
-      // Apply Logic
-      if (currentUser.role === 'master') {
-          // Master saves everything directly
-          if (hasTextChanged) {
-              onUpdateUser(textChanges);
-          }
-          setFeedbackMessage("Alterações salvas com sucesso.");
-      } else {
-          // Member/Admin logic
-          if (hasTextChanged) {
-             // Text changes go to pending
-             const newPendingChanges = { ...user.pendingChanges, ...textChanges };
-             onUpdateUser({ pendingChanges: newPendingChanges });
-             
-             setFeedbackMessage("Dados de texto enviados para aprovação. Foto atualizada imediatamente.");
-          } else if (hasPhotoChanged) {
-             setFeedbackMessage("Foto de perfil atualizada com sucesso!");
+      // 3. PREPARE FINAL UPDATE OBJECT
+      const finalUpdate: Partial<User> = {};
+      let msg = "";
+
+      // Logic:
+      // - Photos always go to 'profilePic' (Immediate Update)
+      // - Text changes go to 'pendingChanges' if not master (Approval flow)
+      
+      if (hasPhotoChanged) {
+          finalUpdate.profilePic = userData.profilePic;
+      }
+
+      if (hasTextChanged) {
+          if (currentUser.role === 'master') {
+              // Master applies changes directly
+              Object.assign(finalUpdate, textUpdates);
+              msg = "Todas as alterações foram salvas.";
           } else {
-             setFeedbackMessage("Nenhuma alteração detectada.");
+              // Member/Admin sends to queue
+              // We must preserve existing pending changes if any
+              const existingPending = user.pendingChanges || {};
+              finalUpdate.pendingChanges = { ...existingPending, ...textUpdates };
+              msg = "Alterações de texto enviadas para aprovação.";
           }
       }
-      
-      setTimeout(() => setFeedbackMessage(null), 4000);
+
+      if (hasPhotoChanged && !hasTextChanged) {
+          msg = "Foto de perfil atualizada com sucesso!";
+      } else if (hasPhotoChanged && hasTextChanged) {
+          msg += " A foto foi atualizada imediatamente.";
+      }
+
+      if (Object.keys(finalUpdate).length > 0) {
+          // Send single atomic update to App.tsx
+          onUpdateUser(finalUpdate);
+          setFeedbackMessage(msg);
+          setTimeout(() => setFeedbackMessage(null), 4000);
+      } else {
+          setFeedbackMessage("Nenhuma alteração detectada.");
+          setTimeout(() => setFeedbackMessage(null), 2000);
+      }
   };
 
   const hasPendingChanges = user.pendingChanges && Object.keys(user.pendingChanges).length > 0;
@@ -340,7 +352,6 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6">
             <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
                 {/* Display userData.profilePic to show the preview of uploaded file before saving */}
-                {/* Added cache busting to image source to force reload if user data changes */}
                 <img 
                     src={userData.profilePic} 
                     alt={`Foto de ${userData.name}`} 

@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   email: string;
@@ -106,7 +107,7 @@ const defaultUsers: User[] = [
   {
     id: 'MASTER-001',
     email: 'heitor.lima@wnews.com', // Institutional email
-    password: 'Wnews@2025', // Senha resetada para o padrão
+    password: 'Wnews#2025', // PASSWORD SYNCED ACROSS DEVICES
     name: 'Heitor Pinheiro Lima',
     role: 'master',
     rg: '00.000.000-0', // Placeholder, update via edit
@@ -130,7 +131,7 @@ const defaultUsers: User[] = [
     cardId: 'WC-MASTER-001',
     status: 'Ativo',
     whatsapp: 'https://wa.me/5511983802055',
-    mustChangePassword: true
+    mustChangePassword: false // DISABLED: Password is already set to personal one
   },
   // 2. VICE-PRESIDENTE (ADMIN)
   {
@@ -1105,8 +1106,8 @@ const defaultUsers: User[] = [
 ];
 
 // Persistence Logic
-// Updated to V8 to ensure clean slate for optimized images
-const STORAGE_KEY = 'wnews_mock_users_v8';
+// Updated to V15 to reset passwords and force cache bust completely with Heitor's sync fix
+const STORAGE_KEY = 'wnews_mock_users_v15';
 
 export const loadUsersFromStorage = (): User[] => {
     try {
@@ -1145,10 +1146,10 @@ export const saveUsersToStorage = (users: User[]) => {
 
 // Helper to update a single user in storage immediately
 export const updateUserInStorage = (updatedUser: User) => {
-    // 1. Add Timestamp for Cache Busting
+    // 1. Add Timestamp for Cache Busting and Sync
     updatedUser.lastModified = Date.now();
 
-    // 2. Load current DB state
+    // 2. Load current DB state to ensure we don't overwrite other updates
     const currentUsers = loadUsersFromStorage();
     const index = currentUsers.findIndex(u => u.id === updatedUser.id);
     
@@ -1162,6 +1163,10 @@ export const updateUserInStorage = (updatedUser: User) => {
         if (memIndex !== -1) {
             mockUsers[memIndex] = updatedUser;
         }
+    } else {
+        // If for some reason user isn't in storage, add them
+        currentUsers.push(updatedUser);
+        saveUsersToStorage(currentUsers);
     }
 };
 

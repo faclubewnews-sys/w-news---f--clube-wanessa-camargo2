@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { ButterflyIcon } from './components/ButterflyIcon';
 import { InputField } from './components/InputField';
@@ -65,11 +66,15 @@ function App() {
     setLoginError(''); // Reset error on new attempt
 
     // CRITICAL: Refresh users from storage before login to ensure we have the latest passwords/data
-    // This handles the case where password was changed in another tab/session.
+    // This handles the case where password was changed in another tab/session/device simulator.
     const currentUsers = refreshUsersFromStorage();
 
+    // Clean input to avoid hidden spaces from mobile keyboards
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
     const foundUser = currentUsers.find(
-      user => user.email.toLowerCase() === email.toLowerCase() && user.password === password
+      user => user.email.toLowerCase() === cleanEmail && user.password === cleanPassword
     );
 
     if (foundUser) {
@@ -95,10 +100,10 @@ function App() {
               mustChangePassword: false 
           };
 
-          // Persist changes to local storage via mockData helper immediately
+          // 1. Persist changes to global storage immediately (Single Source of Truth)
           updateUserInStorage(updatedUser);
           
-          // Log the user in with the updated user object
+          // 2. Update local state with the new persistent object
           setLoggedInUser(updatedUser);
           setPendingUser(null);
           setChangePasswordOpen(false);
@@ -121,12 +126,12 @@ function App() {
       setForgotPasswordOpen(false);
   };
 
-  // Handle Reset Password Logic (from Link - kept for Admin reset flows if needed, but public flow is now message only)
+  // Handle Reset Password Logic
   const handleResetPasswordSubmit = (newPassword: string) => {
       if (resettingUser) {
           const updatedResetUser = {
               ...resettingUser,
-              password: newPassword,
+              password: newPassword, 
               mustChangePassword: false,
               resetToken: undefined
           };
@@ -141,7 +146,7 @@ function App() {
   };
 
   // Function to handle updates from child components
-  // This is now smarter: it handles partial updates (pendingChanges) AND direct updates.
+  // This logic ensures that any update (Photo, Text, etc) is immediately persisted to storage
   const handleUserUpdate = (updatedFields: Partial<User>) => {
     if (!loggedInUser) return;
 
@@ -150,7 +155,7 @@ function App() {
     setLoggedInUser(updatedUser);
 
     // 2. Persist to global storage array and LocalStorage using the helper
-    // This is the CRITICAL step for photo updates to be seen by others.
+    // This is critical for the password and photo to persist across page reloads
     updateUserInStorage(updatedUser);
 
     // 3. Trigger global refresh for components listening to data changes (e.g. CommunityGallery)
@@ -275,7 +280,7 @@ function App() {
           />
       )}
 
-      {/* Reset Password Modal (From Link - still used if admin resets via link) */}
+      {/* Reset Password Modal (From Link) */}
       {resettingUser && (
           <ResetPasswordModal 
             user={resettingUser}

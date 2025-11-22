@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo } from 'react';
 import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD, saveUsersToStorage } from '../data/mockData';
 import { UserCard } from './UserCard';
@@ -254,10 +256,19 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                              <div className="mt-8 pt-6 border-t border-brand-gold/20 dark:border-dark-icon/50">
                                 <h4 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Ações Administrativas</h4>
                                 <div className="flex flex-wrap gap-4">
+                                     {/* Reset Password - Master AND Admin */}
+                                     {(currentUser.role === 'master' || currentUser.role === 'admin') && (
+                                        <PrimaryButton onClick={() => setShowResetConfirm(true)}>Redefinir Senha</PrimaryButton>
+                                     )}
+
+                                     {/* Hierarchy - Master Only */}
                                      {currentUser.role === 'master' && (
+                                        <PrimaryButton onClick={handleOpenHierarchyModal}>Alterar Hierarquia</PrimaryButton>
+                                     )}
+
+                                     {/* Management Actions - Master AND Admin */}
+                                     {(currentUser.role === 'master' || currentUser.role === 'admin') && (
                                         <>
-                                            <PrimaryButton onClick={() => setShowResetConfirm(true)}>Redefinir Senha</PrimaryButton>
-                                            <PrimaryButton onClick={handleOpenHierarchyModal}>Alterar Hierarquia</PrimaryButton>
                                             <button className="px-4 py-2 rounded-md text-sm font-semibold bg-yellow-500 text-white hover:bg-yellow-600">Bloquear Acesso</button>
                                             <button className="px-4 py-2 rounded-md text-sm font-semibold bg-red-500 text-white hover:bg-red-600">Excluir Membro</button>
                                             <button className="px-4 py-2 rounded-md text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline">Ver Histórico</button>

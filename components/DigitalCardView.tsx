@@ -103,6 +103,7 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
           const resizedImage = await resizeImage(file);
           setProfilePicSrc(resizedImage);
           // Immediate global update for photo
+          // This call triggers updateUserInStorage in App.tsx, ensuring persistence
           onUpdateUser({ profilePic: resizedImage });
           alert("Foto atualizada com sucesso em todos os seus perfis.");
       } catch (error) {
@@ -189,7 +190,7 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
                       
                       {/* Photo Area */}
                       <div 
-                          className="relative h-[75%] w-[28%] aspect-[3/4] rounded-xl overflow-hidden border-2 shadow-md bg-zinc-800 group cursor-pointer self-center"
+                          className="relative h-[75%] w-[28%] aspect-[3/4] rounded-xl overflow-hidden border-2 shadow-md bg-zinc-800 group cursor-pointer self-center z-30"
                           style={{ borderColor: brandGold }}
                           onClick={handlePhotoClick}
                       >
@@ -231,7 +232,7 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
                            </div>
                       </div>
 
-                      {/* Signature Area (Bottom Right) - Adjusted Z-Index and Position to avoid overlap */}
+                      {/* Signature Area (Bottom Right) - Adjusted Z-Index to 10 to ensure it stays BEHIND text (z-20) */}
                       <div className="absolute bottom-[-5%] right-[-2%] w-[30%] opacity-80 pointer-events-none z-10">
                            <img 
                               src="https://i.ibb.co/Y4R8xqy8/Design-sem-nome-13.png"
