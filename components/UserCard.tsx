@@ -114,16 +114,56 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Helper to resize images (prevent storage quota exceeded on mobile)
+  const resizeImage = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 600; // Max resolution for avatar
+            const MAX_HEIGHT = 600;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            // Compress to 70% quality JPEG to save storage space
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+          };
+          img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (error) => reject(error);
+      });
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        // Update local view state
-        setUserData(prev => ({ ...prev, profilePic: result }));
-      };
-      reader.readAsDataURL(file);
+        try {
+            const resizedImage = await resizeImage(file);
+            setUserData(prev => ({ ...prev, profilePic: resizedImage }));
+        } catch (error) {
+            console.error("Erro ao processar imagem", error);
+            alert("Não foi possível processar a imagem. Tente outra.");
+        }
     }
   };
 

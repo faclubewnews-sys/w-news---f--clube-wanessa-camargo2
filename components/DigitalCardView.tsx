@@ -56,18 +56,59 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Helper to resize images
+  const resizeImage = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 600;
+            const MAX_HEIGHT = 600;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            // Compress to 70% quality JPEG to save storage space
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+          };
+          img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (error) => reject(error);
+      });
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setProfilePicSrc(result);
-        // Immediate global update for photo
-        onUpdateUser({ profilePic: result });
-        alert("Foto atualizada com sucesso em todos os seus perfis.");
-      };
-      reader.readAsDataURL(file);
+      try {
+          const resizedImage = await resizeImage(file);
+          setProfilePicSrc(resizedImage);
+          // Immediate global update for photo
+          onUpdateUser({ profilePic: resizedImage });
+          alert("Foto atualizada com sucesso em todos os seus perfis.");
+      } catch (error) {
+          console.error("Erro ao processar imagem", error);
+          alert("Não foi possível salvar a imagem. Tente um arquivo menor.");
+      }
     }
   };
 
@@ -166,7 +207,7 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
                       {/* Text Info Area */}
                       <div className="flex flex-col justify-end h-full flex-1 ml-[5%] pb-[1%] relative z-10">
                            {/* Name */}
-                           <div className="mb-[6%] max-w-[70%]">
+                           <div className="mb-[6%] max-w-[65%]">
                               <p className="uppercase tracking-wider font-bold opacity-90" style={{ color: brandGold, fontSize: 'clamp(8px, 1.5vw, 12px)', marginBottom: '0.5%' }}>Nome</p>
                               <p className="font-bold text-white leading-none uppercase drop-shadow-md tracking-wide break-words line-clamp-2" style={{ fontSize: 'clamp(12px, 3.2vw, 24px)' }}>
                                   {user.name}

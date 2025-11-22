@@ -1104,7 +1104,8 @@ const defaultUsers: User[] = [
 ];
 
 // Persistence Logic
-const STORAGE_KEY = 'wnews_mock_users_v7';
+// Updated to V8 to ensure clean slate for optimized images
+const STORAGE_KEY = 'wnews_mock_users_v8';
 
 export const loadUsersFromStorage = (): User[] => {
     try {
@@ -1123,6 +1124,10 @@ export const saveUsersToStorage = (users: User[]) => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
     } catch (e) {
         console.error("Failed to save users to storage", e);
+        // Handle QuotaExceededError specifically for mobile browsers
+        if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+            alert("⚠️ Espaço cheio! A imagem selecionada é muito grande para o armazenamento local. O sistema tentou comprimi-la, mas ainda assim excedeu o limite do navegador. Tente uma imagem menor.");
+        }
     }
 };
 
