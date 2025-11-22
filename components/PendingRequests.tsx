@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
-import { User, mockUsers, saveUsersToStorage } from '../data/mockData';
+import { User, mockUsers, saveUsersToStorage, mockNotifications, mockAuditLog, AuditLogEntry, Notification } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
 
 interface PendingRequestsProps {
@@ -32,6 +33,7 @@ const DetailRow: React.FC<{ label: string, oldValue: any, newValue: any, isImage
 
 export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, onUpdate }) => {
     const [selectedRequest, setSelectedRequest] = useState<User | null>(null);
+    const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
     // Force a re-evaluation when we update local storage (basic trigger)
     const [refreshKey, setRefreshKey] = useState(0);
@@ -59,15 +61,49 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, o
         mockUsers[targetUserIndex] = updatedUser;
         saveUsersToStorage(mockUsers);
 
-        // 4. Cleanup UI
-        alert(`Alterações de ${updatedUser.name} aprovadas com sucesso!`);
+        // 4. AUDIT LOG
+        const auditEntry: AuditLogEntry = {
+            id: `AUDIT-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            responsibleAdminId: currentUser.id,
+            responsibleAdminName: currentUser.name,
+            targetUserId: updatedUser.id,
+            targetUserName: updatedUser.name,
+            action: 'Aprovação de Alteração',
+            details: `Alterações aprovadas: ${Object.keys(pending).join(', ')}`
+        };
+        mockAuditLog.push(auditEntry);
+
+        // 5. PUSH NOTIFICATION (Simulated with Retry Logic)
+        try {
+            const pushNotification: Notification = {
+                id: `NOT-${Date.now()}`,
+                title: "Atualização de cadastro aprovada",
+                message: "Sua alteração foi aprovada pela equipe do fã-clube. Verifique seu perfil para confirmar os dados.",
+                type: 'update',
+                date: new Date().toISOString(),
+                read: false,
+                targetUserId: updatedUser.id // Only sends to this specific user
+            };
+            // In a real scenario, we would await an API call here. 
+            // If it failed, we would catch error and log it.
+            mockNotifications.unshift(pushNotification);
+        } catch (error) {
+            console.error("Erro ao enviar push notification para o usuário:", error);
+            // Logic to add to a retry queue would go here
+        }
+
+        // 6. Cleanup UI & Feedback
+        setFeedbackMessage("Alteração aprovada com sucesso.");
+        setTimeout(() => setFeedbackMessage(null), 3000);
+
         setSelectedRequest(null);
         setRefreshKey(prev => prev + 1);
         if (onUpdate) onUpdate();
         
         // Force reload to ensure global state (Header pics etc) updates if needed
         // In a real app, context would handle this, here we trigger App re-render via callback or simple refresh
-        window.location.reload(); 
+        setTimeout(() => window.location.reload(), 1500); // Slight delay to let toast be seen
     };
 
     const handleReject = () => {
@@ -80,7 +116,9 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, o
         mockUsers[targetUserIndex].pendingChanges = undefined;
         saveUsersToStorage(mockUsers);
 
-        alert(`Solicitação de ${selectedRequest.name} rejeitada.`);
+        setFeedbackMessage(`Solicitação de ${selectedRequest.name} rejeitada.`);
+        setTimeout(() => setFeedbackMessage(null), 3000);
+
         setSelectedRequest(null);
         setRefreshKey(prev => prev + 1);
         if (onUpdate) onUpdate();
@@ -109,7 +147,16 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, o
     };
 
     return (
-        <div>
+        <div className="relative">
+            {feedbackMessage && (
+                 <div className="absolute top-0 left-0 right-0 z-10 bg-green-100 text-green-800 px-4 py-3 rounded-md text-sm font-bold shadow-md animate-fade-in flex items-center justify-center gap-2 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {feedbackMessage}
+                </div>
+            )}
+
             <h3 className="text-lg font-bold text-brand-text dark:text-dark-accent mb-4">Solicitações Pendentes</h3>
             {pendingUsers.length > 0 ? (
                 <div className="overflow-x-auto">

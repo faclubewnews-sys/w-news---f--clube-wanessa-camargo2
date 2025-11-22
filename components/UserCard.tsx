@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { User } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
@@ -59,6 +60,8 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       return initial;
   });
   
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  
   // Reset form state when user prop changes
   useEffect(() => {
       setUserData({ ...user });
@@ -70,17 +73,18 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   const canMasterEdit = currentUser.role === 'master';
   
   const getEditableStatus = (fieldName: keyof User | keyof User['socials']) => {
+    // Master can edit anyone
     if (canMasterEdit) return true;
 
-    // Added detailed address fields to allow edits
+    // Any user can edit ALL fields in their own profile
+    if (isOwnProfile) return true;
+
+    // Admin editing others (Legacy logic for when Admin views other profiles)
     const nonSensitiveFields = [
         'phone', 'address', 'instagram', 'twitter', 'facebook', 'tiktok', 'lastfm', 'email',
         'street', 'number', 'complement', 'zipCode', 'city', 'state'
     ];
     
-    if (isOwnProfile && currentUser.role === 'member') {
-      return nonSensitiveFields.includes(fieldName as string);
-    }
     if (currentUser.role === 'admin' && !isOwnProfile) {
        return nonSensitiveFields.includes(fieldName as string);
     }
@@ -104,6 +108,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   };
   
   const handlePhotoClick = () => {
+      // Allow photo click if it's own profile or master/admin managing
       if (isOwnProfile || canMasterEdit || currentUser.role === 'admin') {
           fileInputRef.current?.click();
       }
@@ -115,8 +120,10 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        // Only update local state for preview. 
-        // Do NOT call onUpdateUser yet. The user must click "Save/Submit" to persist.
+        // Direct update for photo to sync everywhere immediately
+        if(onUpdateUser) {
+           onUpdateUser({ profilePic: result });
+        }
         setUserData(prev => ({ ...prev, profilePic: result }));
       };
       reader.readAsDataURL(file);
@@ -129,7 +136,8 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       if (currentUser.role === 'master') {
           // Master saves directly
           onUpdateUser(userData);
-          alert("Dados atualizados com sucesso!");
+          setFeedbackMessage("Alteração salva com sucesso.");
+          setTimeout(() => setFeedbackMessage(null), 3000);
       } else {
           // Members/Admins send to pending changes
           const changes: Partial<User> = {};
@@ -161,11 +169,13 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
               // Merge with existing pending changes if any
               const newPendingChanges = { ...user.pendingChanges, ...changes };
               onUpdateUser({ pendingChanges: newPendingChanges });
-              alert("Suas alterações foram enviadas para aprovação do Presidente.");
-              // Revert local view to original until approved (optional, but keeps UI consistent with official data)
-              // setUserData({ ...user }); 
+              
+              // Specific feedback message requested
+              setFeedbackMessage("Sua solicitação foi enviada ao presidente para análise.");
+              setTimeout(() => setFeedbackMessage(null), 4000);
           } else {
-              alert("Nenhuma alteração detectada.");
+              setFeedbackMessage("Nenhuma alteração detectada.");
+              setTimeout(() => setFeedbackMessage(null), 3000);
           }
       }
   };
@@ -245,10 +255,20 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
           </Section>
 
         {showSaveChanges && (
-            <div className="flex justify-end mt-6">
-                <PrimaryButton onClick={handleSaveChanges}>
-                  {currentUser.role !== 'master' ? 'Enviar para Aprovação' : 'Salvar Alterações'}
-                </PrimaryButton>
+            <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-6 relative">
+                {feedbackMessage && (
+                    <div className="bg-green-100 text-green-800 px-4 py-2 rounded-md text-sm font-semibold shadow-md animate-fade-in flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {feedbackMessage}
+                    </div>
+                )}
+                <div className="w-full sm:w-auto">
+                     <PrimaryButton onClick={handleSaveChanges}>
+                        {currentUser.role !== 'master' ? 'Enviar para Aprovação' : 'Salvar Alterações'}
+                     </PrimaryButton>
+                </div>
             </div>
         )}
     </div>

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD } from '../data/mockData';
+import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD, saveUsersToStorage } from '../data/mockData';
 import { UserCard } from './UserCard';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -49,6 +49,9 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
     const [cityFilter, setCityFilter] = useState('');
     const [stateFilter, setStateFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    
+    // State to force list refresh after updates
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const [isHierarchyModalOpen, setHierarchyModalOpen] = useState(false);
     const [showHierarchyConfirm, setShowHierarchyConfirm] = useState(false);
@@ -67,7 +70,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
             uniqueCities: Array.from(cities).sort(), 
             uniqueStates: Array.from(states).sort()
         };
-    }, []);
+    }, [refreshKey]); // Refresh filters when data changes
 
     const filteredUsers = useMemo(() => {
         return mockUsers.filter(user => {
@@ -82,7 +85,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
             
             return matchesSearch && matchesCity && matchesState && matchesStatus;
         });
-    }, [searchTerm, cityFilter, stateFilter, statusFilter]);
+    }, [searchTerm, cityFilter, stateFilter, statusFilter, refreshKey]);
 
     const handleOpenHierarchyModal = () => {
         if (selectedUser) {
@@ -102,6 +105,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
         if (targetUserIndex !== -1) {
             const originalRole = mockUsers[targetUserIndex].role;
             mockUsers[targetUserIndex].role = newRole;
+            saveUsersToStorage(mockUsers);
 
             const logEntry: AuditLogEntry = {
                 id: `LOG-${Date.now()}`,
@@ -114,22 +118,26 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                 details: `Cargo alterado de ${roleNames[originalRole]} para ${roleNames[newRole]}.`
             };
             mockAuditLog.push(logEntry);
+            setRefreshKey(prev => prev + 1);
         }
 
         setShowHierarchyConfirm(false);
         setHierarchyModalOpen(false);
-        // Force re-render of UserCard if it's still open
-        setSelectedUser({ ...mockUsers[targetUserIndex] });
+        if (selectedUser) {
+             const updated = mockUsers.find(u => u.id === selectedUser.id);
+             if (updated) setSelectedUser({...updated});
+        }
     };
 
     const handleResetPassword = () => {
         if (!selectedUser) return;
         
-        const targetUser = mockUsers.find(u => u.id === selectedUser.id);
-        if (targetUser) {
-            targetUser.password = TEMP_PASSWORD;
-            targetUser.mustChangePassword = true;
-            targetUser.resetToken = undefined;
+        const targetUserIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
+        if (targetUserIndex !== -1) {
+            mockUsers[targetUserIndex].password = TEMP_PASSWORD;
+            mockUsers[targetUserIndex].mustChangePassword = true;
+            mockUsers[targetUserIndex].resetToken = undefined;
+            saveUsersToStorage(mockUsers);
             
             const logEntry: AuditLogEntry = {
                 id: `LOG-${Date.now()}`,
@@ -145,6 +153,27 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
 
             alert(`Senha redefinida com sucesso para: ${TEMP_PASSWORD}`);
             setShowResetConfirm(false);
+            setRefreshKey(prev => prev + 1);
+        }
+    };
+
+    // New Handler to save edits from UserCard
+    const handleUserUpdate = (updatedFields: Partial<User>) => {
+        if (!selectedUser) return;
+
+        const targetIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
+        if (targetIndex !== -1) {
+            // Master editing another user: direct update
+            // We merge the current mockUser with updatedFields
+            const updatedUser = { ...mockUsers[targetIndex], ...updatedFields };
+            mockUsers[targetIndex] = updatedUser;
+            saveUsersToStorage(mockUsers);
+            
+            // Update local selected user state to reflect changes in the modal immediately
+            setSelectedUser(updatedUser);
+            
+            // Force list refresh
+            setRefreshKey(prev => prev + 1);
         }
     };
 
@@ -216,7 +245,11 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                      <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl w-full max-w-4xl relative" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => setSelectedUser(null)} className="absolute top-4 right-4 text-brand-text/50 hover:text-brand-gold dark:text-dark-text-soft/50 dark:hover:text-dark-text-soft text-3xl z-10">&times;</button>
                         <div className="max-h-[80vh] overflow-y-auto p-8">
-                            <UserCard user={selectedUser} currentUser={currentUser} />
+                            <UserCard 
+                                user={selectedUser} 
+                                currentUser={currentUser} 
+                                onUpdateUser={handleUserUpdate}
+                            />
 
                              <div className="mt-8 pt-6 border-t border-brand-gold/20 dark:border-dark-icon/50">
                                 <h4 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Ações Administrativas</h4>
