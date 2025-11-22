@@ -25,6 +25,9 @@ function App() {
   const [isForgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resettingUser, setResettingUser] = useState<User | null>(null);
 
+  // State to trigger re-renders in child components (like Gallery) when data changes
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -153,6 +156,9 @@ function App() {
         mockUsers[userIndex] = { ...mockUsers[userIndex], ...updatedFields };
         saveUsersToStorage(mockUsers);
     }
+
+    // 3. Trigger global refresh for components listening to data changes (e.g. CommunityGallery)
+    setLastUpdate(Date.now());
   };
 
   if (loggedInUser) {
@@ -165,6 +171,7 @@ function App() {
           onToggleTheme={toggleTheme}
           onContactClick={() => setContactModalOpen(true)}
           onUserUpdate={handleUserUpdate}
+          lastUpdate={lastUpdate}
         />
         <ContactModal 
           isOpen={isContactModalOpen} 
