@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { ButterflyIcon } from './components/ButterflyIcon';
 import { InputField } from './components/InputField';
@@ -82,19 +84,22 @@ function App() {
 
   const handlePasswordChanged = (newPassword: string) => {
       if (pendingUser) {
-          // Update user object
-          pendingUser.password = newPassword;
-          pendingUser.mustChangePassword = false;
+          // Create a new object to ensure state updates cleanly and persists correctly
+          const updatedUser = { 
+              ...pendingUser, 
+              password: newPassword, 
+              mustChangePassword: false 
+          };
 
           // Persist changes to local storage via mockData helper
-          const userIndex = mockUsers.findIndex(u => u.id === pendingUser.id);
+          const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
           if (userIndex !== -1) {
-              mockUsers[userIndex] = pendingUser;
+              mockUsers[userIndex] = updatedUser;
               saveUsersToStorage(mockUsers);
           }
           
-          // Log the user in
-          setLoggedInUser(pendingUser);
+          // Log the user in with the updated user object
+          setLoggedInUser(updatedUser);
           setPendingUser(null);
           setChangePasswordOpen(false);
           setEmail('');
