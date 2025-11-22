@@ -120,10 +120,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        // Direct update for photo to sync everywhere immediately
-        if(onUpdateUser) {
-           onUpdateUser({ profilePic: result });
-        }
+        // Update local view state
         setUserData(prev => ({ ...prev, profilePic: result }));
       };
       reader.readAsDataURL(file);
@@ -133,18 +130,26 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   const handleSaveChanges = () => {
       if (!onUpdateUser) return;
 
+      // 1. HANDLE PHOTO UPDATE (Global & Immediate)
+      // Check if profilePic changed. If so, update it directly regardless of role.
+      if (userData.profilePic !== user.profilePic) {
+          onUpdateUser({ profilePic: userData.profilePic });
+          // If only photo changed, we can show success and exit, but let's process text too.
+      }
+
+      // 2. HANDLE TEXT DATA
       if (currentUser.role === 'master') {
-          // Master saves directly
+          // Master saves text directly
           onUpdateUser(userData);
           setFeedbackMessage("Alteração salva com sucesso.");
           setTimeout(() => setFeedbackMessage(null), 3000);
       } else {
-          // Members/Admins send to pending changes
+          // Members/Admins send text changes to pending
           const changes: Partial<User> = {};
           
           // Compare top-level fields
           (Object.keys(userData) as Array<keyof User>).forEach(key => {
-              if (key === 'socials' || key === 'pendingChanges') return;
+              if (key === 'socials' || key === 'pendingChanges' || key === 'profilePic') return; // Skip profilePic handled above
               if (JSON.stringify(userData[key]) !== JSON.stringify(user[key])) {
                   // @ts-ignore
                   changes[key] = userData[key];
@@ -170,9 +175,12 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
               const newPendingChanges = { ...user.pendingChanges, ...changes };
               onUpdateUser({ pendingChanges: newPendingChanges });
               
-              // Specific feedback message requested
               setFeedbackMessage("Sua solicitação foi enviada ao presidente para análise.");
               setTimeout(() => setFeedbackMessage(null), 4000);
+          } else if (userData.profilePic !== user.profilePic) {
+             // Only photo changed, simpler message
+             setFeedbackMessage("Foto de perfil atualizada com sucesso.");
+             setTimeout(() => setFeedbackMessage(null), 3000);
           } else {
               setFeedbackMessage("Nenhuma alteração detectada.");
               setTimeout(() => setFeedbackMessage(null), 3000);
@@ -266,7 +274,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
                 )}
                 <div className="w-full sm:w-auto">
                      <PrimaryButton onClick={handleSaveChanges}>
-                        {currentUser.role !== 'master' ? 'Enviar para Aprovação' : 'Salvar Alterações'}
+                        {currentUser.role !== 'master' ? 'Salvar / Enviar para Aprovação' : 'Salvar Alterações'}
                      </PrimaryButton>
                 </div>
             </div>
@@ -312,7 +320,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
               )}
                {hasPendingChanges && isOwnProfile && (
                 <div className="mt-2 text-xs font-semibold bg-yellow-200 text-yellow-800 px-2 py-1 rounded-md inline-block">
-                   Suas alterações estão aguardando aprovação.
+                   Alterações cadastrais em análise.
                 </div>
               )}
             </div>

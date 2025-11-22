@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { User, mockUsers } from '../data/mockData';
 import { ButterflyIcon } from './ButterflyIcon';
@@ -14,7 +15,7 @@ export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser,
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
 
   // Filter logic: Active members only, exclude current user from grid if desired (optional, keeping for now), apply search
-  // Depends on lastUpdate to refresh when mockUsers changes
+  // Depends on lastUpdate to refresh when mockUsers changes via localStorage updates elsewhere in the app
   const activeMembers = useMemo(() => {
     return mockUsers.filter(user => {
       if (user.status !== 'Ativo') return false;

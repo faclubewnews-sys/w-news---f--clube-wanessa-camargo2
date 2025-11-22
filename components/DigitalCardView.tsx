@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
@@ -14,7 +15,7 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
   const [profilePicSrc, setProfilePicSrc] = useState(user.profilePic);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync state if user prop changes
+  // Sync state if user prop changes (e.g. update from another component)
   useEffect(() => {
       setProfilePicSrc(user.profilePic);
   }, [user.profilePic]);
@@ -62,7 +63,9 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setProfilePicSrc(result);
+        // Immediate global update for photo
         onUpdateUser({ profilePic: result });
+        alert("Foto atualizada com sucesso em todos os seus perfis.");
       };
       reader.readAsDataURL(file);
     }
@@ -209,7 +212,7 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
           {isDownloading ? 'Gerando Carteirinha...' : 'Baixar Carteirinha'}
         </PrimaryButton>
         <p className="text-xs text-brand-text/60 dark:text-dark-text-soft/60 mt-4 px-4">
-          Toque na foto para personalizar. A foto será atualizada automaticamente em seu perfil e para toda a comunidade.
+          Toque na foto para alterar. A foto será atualizada automaticamente em seu perfil e para toda a comunidade.
         </p>
       </div>
     </div>
