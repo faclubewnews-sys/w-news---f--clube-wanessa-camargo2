@@ -17,7 +17,7 @@ export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser,
   // Filter logic: Active members only, apply search
   // CRITICAL: We re-fetch users from storage whenever lastUpdate changes to get the fresh photos
   const activeMembers = useMemo(() => {
-    // Force a fresh read from the "database"
+    // Force a fresh read from the "database" to simulate real-time fetch
     const currentUsers = refreshUsersFromStorage();
     
     return currentUsers.filter(user => {
@@ -34,7 +34,6 @@ export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser,
   }, [searchTerm, selectedCity, lastUpdate]);
 
   const uniqueCities = useMemo(() => {
-    // Force a fresh read here too
     const currentUsers = refreshUsersFromStorage();
     const cities = new Set(currentUsers.filter(u => u.status === 'Ativo').map(u => u.city));
     return Array.from(cities).sort();

@@ -32,6 +32,7 @@ export interface User {
   whatsapp?: string;
   mustChangePassword?: boolean; // New field to force password change
   resetToken?: string; // Token for password recovery link
+  lastModified?: number; // Timestamp for cache busting and sync
 }
 
 export interface GiveawayEntry {
@@ -1123,10 +1124,8 @@ export const loadUsersFromStorage = (): User[] => {
 // This simulates fetching from a live database to ensure sync
 export const refreshUsersFromStorage = () => {
     const freshData = loadUsersFromStorage();
-    // We clear the current array and push fresh data to keep the reference intact if possible, 
-    // but generally we should just re-assign. 
-    // Since mockUsers is a const export, we modify its contents or usage.
-    // To make this robust for the React App, we will re-load mockUsers content.
+    // We replace content in place to maintain reference if used elsewhere, 
+    // though typically we should return the new array.
     mockUsers.length = 0;
     mockUsers.push(...freshData);
     return mockUsers;
@@ -1146,12 +1145,19 @@ export const saveUsersToStorage = (users: User[]) => {
 
 // Helper to update a single user in storage immediately
 export const updateUserInStorage = (updatedUser: User) => {
+    // 1. Add Timestamp for Cache Busting
+    updatedUser.lastModified = Date.now();
+
+    // 2. Load current DB state
     const currentUsers = loadUsersFromStorage();
     const index = currentUsers.findIndex(u => u.id === updatedUser.id);
+    
     if (index !== -1) {
+        // 3. Update DB
         currentUsers[index] = updatedUser;
         saveUsersToStorage(currentUsers);
-        // Update in-memory mockUsers as well
+        
+        // 4. Update In-Memory State (for current session)
         const memIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
         if (memIndex !== -1) {
             mockUsers[memIndex] = updatedUser;

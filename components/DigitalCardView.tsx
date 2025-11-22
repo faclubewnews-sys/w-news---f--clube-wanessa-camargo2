@@ -158,7 +158,7 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
               ></div>
               
               {/* 3. Content Wrapper - Using percentages for absolute positioning */}
-              <div className="absolute inset-0 p-[5%] font-montserrat">
+              <div className="absolute inset-0 p-[5%] font-montserrat flex flex-col justify-between">
                   
                   {/* Top Header */}
                   <div className="flex justify-between items-start border-b border-white/10 pb-[2%]">
@@ -185,11 +185,11 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
                   </div>
 
                   {/* Main Content Body */}
-                  <div className="absolute top-[28%] left-[5%] right-[5%] bottom-[8%] flex flex-row items-end justify-between">
+                  <div className="flex flex-row items-end justify-between flex-1 mt-[2%] mb-[3%] relative">
                       
                       {/* Photo Area */}
                       <div 
-                          className="relative h-full aspect-[3/4] rounded-xl overflow-hidden border-2 shadow-md bg-zinc-800 group cursor-pointer"
+                          className="relative h-[75%] w-[28%] aspect-[3/4] rounded-xl overflow-hidden border-2 shadow-md bg-zinc-800 group cursor-pointer self-center"
                           style={{ borderColor: brandGold }}
                           onClick={handlePhotoClick}
                       >
@@ -205,9 +205,9 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
                       </div>
 
                       {/* Text Info Area */}
-                      <div className="flex flex-col justify-end h-full flex-1 ml-[5%] pb-[1%] relative z-10">
+                      <div className="flex flex-col justify-end h-full flex-1 ml-[5%] relative z-20 pb-2">
                            {/* Name */}
-                           <div className="mb-[6%] max-w-[65%]">
+                           <div className="mb-[4%] pr-[20%]">
                               <p className="uppercase tracking-wider font-bold opacity-90" style={{ color: brandGold, fontSize: 'clamp(8px, 1.5vw, 12px)', marginBottom: '0.5%' }}>Nome</p>
                               <p className="font-bold text-white leading-none uppercase drop-shadow-md tracking-wide break-words line-clamp-2" style={{ fontSize: 'clamp(12px, 3.2vw, 24px)' }}>
                                   {user.name}
@@ -231,8 +231,8 @@ export const DigitalCardView: React.FC<DigitalCardViewProps> = ({ user, onUpdate
                            </div>
                       </div>
 
-                      {/* Signature Area (Bottom Right) */}
-                      <div className="absolute bottom-0 right-0 w-[25%] opacity-90 pointer-events-none">
+                      {/* Signature Area (Bottom Right) - Adjusted Z-Index and Position to avoid overlap */}
+                      <div className="absolute bottom-[-5%] right-[-2%] w-[30%] opacity-80 pointer-events-none z-10">
                            <img 
                               src="https://i.ibb.co/Y4R8xqy8/Design-sem-nome-13.png"
                               alt="Assinatura"

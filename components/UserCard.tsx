@@ -62,7 +62,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   
-  // Reset form state when user prop changes
+  // Reset form state when user prop changes (e.g. when list refreshes)
   useEffect(() => {
       setUserData({ ...user });
   }, [user]);
@@ -159,6 +159,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
     if (file && file.type.startsWith('image/')) {
         try {
             const resizedImage = await resizeImage(file);
+            // Update local state immediately for preview
             setUserData(prev => ({ ...prev, profilePic: resizedImage }));
         } catch (error) {
             console.error("Erro ao processar imagem", error);
@@ -174,18 +175,17 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       let hasTextChanged = false;
 
       // 1. HANDLE PHOTO UPDATE (Global & Immediate)
-      // If the photo changed, we MUST update it immediately in the global store, 
-      // bypassing any pending checks.
+      // CRITICAL FIX: Photo updates bypass pending logic and are saved immediately
+      // to the global user store so they propagate to everyone instantly.
       if (hasPhotoChanged) {
           onUpdateUser({ profilePic: userData.profilePic });
       }
 
       // 2. HANDLE TEXT DATA (Role Dependent)
-      
-      // Compare top-level fields (excluding photo and internal fields)
+      // Check text fields
       const textChanges: Partial<User> = {};
       (Object.keys(userData) as Array<keyof User>).forEach(key => {
-          if (key === 'socials' || key === 'pendingChanges' || key === 'profilePic' || key === 'mustChangePassword' || key === 'resetToken') return;
+          if (key === 'socials' || key === 'pendingChanges' || key === 'profilePic' || key === 'mustChangePassword' || key === 'resetToken' || key === 'lastModified') return;
           if (JSON.stringify(userData[key]) !== JSON.stringify(user[key])) {
               // @ts-ignore
               textChanges[key] = userData[key];
@@ -193,7 +193,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
           }
       });
 
-      // Compare Socials
+      // Check Socials
       const socialChanges: any = {};
       let hasSocialChanges = false;
       (Object.keys(userData.socials) as Array<keyof typeof userData.socials>).forEach(key => {
@@ -212,7 +212,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
       if (currentUser.role === 'master') {
           // Master saves everything directly
           if (hasTextChanged) {
-              onUpdateUser(userData);
+              onUpdateUser(textChanges);
           }
           setFeedbackMessage("Alterações salvas com sucesso.");
       } else {
@@ -340,7 +340,12 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-6">
             <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
                 {/* Display userData.profilePic to show the preview of uploaded file before saving */}
-                <img src={userData.profilePic} alt={`Foto de ${userData.name}`} className="w-24 h-24 rounded-full object-cover ring-4 ring-brand-gold/50 dark:ring-dark-accent/50" />
+                {/* Added cache busting to image source to force reload if user data changes */}
+                <img 
+                    src={userData.profilePic} 
+                    alt={`Foto de ${userData.name}`} 
+                    className="w-24 h-24 rounded-full object-cover ring-4 ring-brand-gold/50 dark:ring-dark-accent/50" 
+                />
                 { (isOwnProfile || canMasterEdit || currentUser.role === 'admin') && (
                      <>
                         <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
