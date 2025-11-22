@@ -1119,6 +1119,19 @@ export const loadUsersFromStorage = (): User[] => {
     return defaultUsers;
 };
 
+// Helper to force refresh mockUsers array from storage
+// This simulates fetching from a live database to ensure sync
+export const refreshUsersFromStorage = () => {
+    const freshData = loadUsersFromStorage();
+    // We clear the current array and push fresh data to keep the reference intact if possible, 
+    // but generally we should just re-assign. 
+    // Since mockUsers is a const export, we modify its contents or usage.
+    // To make this robust for the React App, we will re-load mockUsers content.
+    mockUsers.length = 0;
+    mockUsers.push(...freshData);
+    return mockUsers;
+};
+
 export const saveUsersToStorage = (users: User[]) => {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
@@ -1127,6 +1140,21 @@ export const saveUsersToStorage = (users: User[]) => {
         // Handle QuotaExceededError specifically for mobile browsers
         if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
             alert("⚠️ Espaço cheio! A imagem selecionada é muito grande para o armazenamento local. O sistema tentou comprimi-la, mas ainda assim excedeu o limite do navegador. Tente uma imagem menor.");
+        }
+    }
+};
+
+// Helper to update a single user in storage immediately
+export const updateUserInStorage = (updatedUser: User) => {
+    const currentUsers = loadUsersFromStorage();
+    const index = currentUsers.findIndex(u => u.id === updatedUser.id);
+    if (index !== -1) {
+        currentUsers[index] = updatedUser;
+        saveUsersToStorage(currentUsers);
+        // Update in-memory mockUsers as well
+        const memIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
+        if (memIndex !== -1) {
+            mockUsers[memIndex] = updatedUser;
         }
     }
 };

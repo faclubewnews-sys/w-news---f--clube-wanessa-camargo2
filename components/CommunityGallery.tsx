@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { User, mockUsers } from '../data/mockData';
+import { User, refreshUsersFromStorage } from '../data/mockData';
 import { ButterflyIcon } from './ButterflyIcon';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -14,10 +14,13 @@ export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser,
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
 
-  // Filter logic: Active members only, exclude current user from grid if desired (optional, keeping for now), apply search
-  // Depends on lastUpdate to refresh when mockUsers changes via localStorage updates elsewhere in the app
+  // Filter logic: Active members only, apply search
+  // CRITICAL: We re-fetch users from storage whenever lastUpdate changes to get the fresh photos
   const activeMembers = useMemo(() => {
-    return mockUsers.filter(user => {
+    // Force a fresh read from the "database"
+    const currentUsers = refreshUsersFromStorage();
+    
+    return currentUsers.filter(user => {
       if (user.status !== 'Ativo') return false;
       
       const matchesSearch = 
@@ -31,7 +34,9 @@ export const CommunityGallery: React.FC<CommunityGalleryProps> = ({ currentUser,
   }, [searchTerm, selectedCity, lastUpdate]);
 
   const uniqueCities = useMemo(() => {
-    const cities = new Set(mockUsers.filter(u => u.status === 'Ativo').map(u => u.city));
+    // Force a fresh read here too
+    const currentUsers = refreshUsersFromStorage();
+    const cities = new Set(currentUsers.filter(u => u.status === 'Ativo').map(u => u.city));
     return Array.from(cities).sort();
   }, [lastUpdate]);
 

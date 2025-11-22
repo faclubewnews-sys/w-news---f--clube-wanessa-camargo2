@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { ButterflyIcon } from './components/ButterflyIcon';
 import { InputField } from './components/InputField';
 import { PrimaryButton } from './components/PrimaryButton';
 import { Dashboard } from './components/Dashboard';
-import { mockUsers, User, saveUsersToStorage } from './data/mockData';
+import { mockUsers, User, saveUsersToStorage, refreshUsersFromStorage, updateUserInStorage } from './data/mockData';
 import { ContactModal } from './components/ContactModal';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 import { ForgotPasswordModal } from './components/ForgotPasswordModal';
@@ -61,7 +62,11 @@ function App() {
     e.preventDefault();
     setLoginError(''); // Reset error on new attempt
 
-    const foundUser = mockUsers.find(
+    // CRITICAL: Refresh users from storage before login to ensure we have the latest passwords/data
+    // This handles the case where password was changed in another tab/session.
+    const currentUsers = refreshUsersFromStorage();
+
+    const foundUser = currentUsers.find(
       user => user.email.toLowerCase() === email.toLowerCase() && user.password === password
     );
 
@@ -88,12 +93,8 @@ function App() {
               mustChangePassword: false 
           };
 
-          // Persist changes to local storage via mockData helper
-          const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
-          if (userIndex !== -1) {
-              mockUsers[userIndex] = updatedUser;
-              saveUsersToStorage(mockUsers);
-          }
+          // Persist changes to local storage via mockData helper immediately
+          updateUserInStorage(updatedUser);
           
           // Log the user in with the updated user object
           setLoggedInUser(updatedUser);
@@ -121,16 +122,14 @@ function App() {
   // Handle Reset Password Logic (from Link - kept for Admin reset flows if needed, but public flow is now message only)
   const handleResetPasswordSubmit = (newPassword: string) => {
       if (resettingUser) {
-          resettingUser.password = newPassword;
-          resettingUser.mustChangePassword = false;
-          resettingUser.resetToken = undefined; // Expire token immediately
+          const updatedResetUser = {
+              ...resettingUser,
+              password: newPassword,
+              mustChangePassword: false,
+              resetToken: undefined
+          };
 
-          // Persist
-          const userIndex = mockUsers.findIndex(u => u.id === resettingUser.id);
-          if (userIndex !== -1) {
-              mockUsers[userIndex] = resettingUser;
-              saveUsersToStorage(mockUsers);
-          }
+          updateUserInStorage(updatedResetUser);
 
           alert("Senha alterada com sucesso! Você pode fazer login agora.");
           setResettingUser(null);
@@ -150,12 +149,8 @@ function App() {
     const updatedUser = { ...loggedInUser, ...updatedFields };
     setLoggedInUser(updatedUser);
 
-    // 2. Persist to global storage array and LocalStorage
-    const userIndex = mockUsers.findIndex(u => u.id === loggedInUser.id);
-    if (userIndex !== -1) {
-        mockUsers[userIndex] = { ...mockUsers[userIndex], ...updatedFields };
-        saveUsersToStorage(mockUsers);
-    }
+    // 2. Persist to global storage array and LocalStorage using the helper
+    updateUserInStorage(updatedUser);
 
     // 3. Trigger global refresh for components listening to data changes (e.g. CommunityGallery)
     setLastUpdate(Date.now());
