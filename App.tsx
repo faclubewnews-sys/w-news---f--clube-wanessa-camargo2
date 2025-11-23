@@ -1,11 +1,10 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { ButterflyIcon } from './components/ButterflyIcon';
 import { InputField } from './components/InputField';
 import { PrimaryButton } from './components/PrimaryButton';
 import { Dashboard } from './components/Dashboard';
-import { mockUsers, User, saveUsersToStorage, refreshUsersFromStorage, updateUserInStorage } from './data/mockData';
+import { mockUsers, User, saveUsersToStorage, refreshUsersFromStorage, updateUserInStorage, TEMP_PASSWORD } from './data/mockData';
 import { ContactModal } from './components/ContactModal';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 import { ForgotPasswordModal } from './components/ForgotPasswordModal';
@@ -66,19 +65,22 @@ function App() {
     setLoginError(''); // Reset error on new attempt
 
     // CRITICAL: Refresh users from storage before login to ensure we have the latest passwords/data
-    // This handles the case where password was changed in another tab/session/device simulator.
+    // This guarantees validation against persistent storage, not stale memory.
     const currentUsers = refreshUsersFromStorage();
 
     // Clean input to avoid hidden spaces from mobile keyboards
+    // STRICT TRIM is crucial for mobile copy-paste
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
+    // STRICT CHECK
     const foundUser = currentUsers.find(
       user => user.email.toLowerCase() === cleanEmail && user.password === cleanPassword
     );
 
     if (foundUser) {
-      if (foundUser.mustChangePassword) {
+      // Check if user is using temp password or flag is set
+      if (foundUser.mustChangePassword || foundUser.password === TEMP_PASSWORD) {
           setPendingUser(foundUser);
           setChangePasswordOpen(true);
       } else {
@@ -97,10 +99,12 @@ function App() {
           const updatedUser = { 
               ...pendingUser, 
               password: newPassword, 
-              mustChangePassword: false 
+              mustChangePassword: false,
+              resetToken: undefined // Clear any tokens
           };
 
           // 1. Persist changes to global storage immediately (Single Source of Truth)
+          // This calls 'saveUsersToStorage' internally
           updateUserInStorage(updatedUser);
           
           // 2. Update local state with the new persistent object
@@ -109,12 +113,16 @@ function App() {
           setChangePasswordOpen(false);
           setEmail('');
           setPassword('');
+          
+          // 3. Force refresh of global list just to be safe
+          refreshUsersFromStorage();
       }
   };
 
   const handleCancelPasswordChange = () => {
       setPendingUser(null);
       setChangePasswordOpen(false);
+      setPassword(''); // Clear password field for security
   };
   
   const handleLogout = () => {
@@ -126,7 +134,7 @@ function App() {
       setForgotPasswordOpen(false);
   };
 
-  // Handle Reset Password Logic
+  // Handle Reset Password Logic (From Link)
   const handleResetPasswordSubmit = (newPassword: string) => {
       if (resettingUser) {
           const updatedResetUser = {
@@ -146,7 +154,6 @@ function App() {
   };
 
   // Function to handle updates from child components
-  // This logic ensures that any update (Photo, Text, etc) is immediately persisted to storage
   const handleUserUpdate = (updatedFields: Partial<User>) => {
     if (!loggedInUser) return;
 
@@ -155,7 +162,6 @@ function App() {
     setLoggedInUser(updatedUser);
 
     // 2. Persist to global storage array and LocalStorage using the helper
-    // This is critical for the password and photo to persist across page reloads
     updateUserInStorage(updatedUser);
 
     // 3. Trigger global refresh for components listening to data changes (e.g. CommunityGallery)
