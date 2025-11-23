@@ -100,8 +100,9 @@ export interface Notification {
 // CRITICAL: GLOBAL TEMP PASSWORD CONFIGURATION
 export const TEMP_PASSWORD = 'WNews@2025!';
 
-// CRITICAL: STORAGE KEY UPDATE TO V20 TO FORCE HARD RESET AND FIX AUTH
-const STORAGE_KEY = 'wnews_auth_v20_final_fix';
+// CRITICAL: STORAGE KEY UPDATE TO V21 - STABLE VERSION
+// This key change forces a fresh load of the default users with the correct password.
+const STORAGE_KEY = 'wnews_auth_v21_FINAL_STABLE';
 
 const defaultUsers: User[] = [
   // 1. PRESIDENTE (MASTER)
@@ -1148,34 +1149,13 @@ const defaultUsers: User[] = [
   }
 ];
 
-// Persistence Logic - CRITICAL FIX
-export const loadUsersFromStorage = (): User[] => {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            return JSON.parse(stored);
-        }
-    } catch (e) {
-        console.error("Failed to load users from storage", e);
-    }
-    
-    // CRITICAL: Force reset if storage is empty or key changed
-    // This ensures all users start with TEMP_PASSWORD and mustChangePassword = true
-    saveUsersToStorage(defaultUsers);
-    return defaultUsers;
-};
+// Persistence Logic - CRITICAL FIX V21
 
-// Helper to force refresh mockUsers array from storage
-export const refreshUsersFromStorage = () => {
-    const freshData = loadUsersFromStorage();
-    mockUsers.length = 0;
-    mockUsers.push(...freshData);
-    return mockUsers;
-};
-
+// Helper to save users to storage SAFELY
 export const saveUsersToStorage = (users: User[]) => {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+        console.log(`[AUTH] Users saved to storage key: ${STORAGE_KEY}`);
     } catch (e) {
         console.error("Failed to save users to storage", e);
         if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
@@ -1183,6 +1163,38 @@ export const saveUsersToStorage = (users: User[]) => {
         }
     }
 };
+
+// CRITICAL FIX: Robust Loading Logic
+export const loadUsersFromStorage = (): User[] => {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                console.log(`[AUTH] Loaded ${parsed.length} users from storage.`);
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load users from storage", e);
+    }
+    
+    // Fallback: If no storage or empty, use defaults AND SAVE THEM immediately
+    // This ensures that subsequent reloads find the data in storage
+    console.warn("[AUTH] No valid storage found. Initializing with default users.");
+    saveUsersToStorage(defaultUsers);
+    return defaultUsers;
+};
+
+// Helper to force refresh mockUsers array from storage
+export const refreshUsersFromStorage = () => {
+    const freshData = loadUsersFromStorage();
+    // Clear and refill the array to maintain reference
+    mockUsers.length = 0;
+    mockUsers.push(...freshData);
+    return mockUsers;
+};
+
 
 // Helper to update a single user in storage immediately and robustly
 export const updateUserInStorage = (updatedUser: User) => {
@@ -1203,8 +1215,10 @@ export const updateUserInStorage = (updatedUser: User) => {
         if (memIndex !== -1) {
             mockUsers[memIndex] = updatedUser;
         }
+        console.log(`[AUTH] User ${updatedUser.email} updated successfully in storage.`);
     } else {
         // Fallback: Add user if missing
+        console.warn(`[AUTH] User ${updatedUser.email} not found in storage. Adding new.`);
         currentUsers.push(updatedUser);
         saveUsersToStorage(currentUsers);
         mockUsers.push(updatedUser);
@@ -1239,7 +1253,7 @@ export const resetAllPasswords = () => {
     return true;
 };
 
-// Initialize mockUsers from storage
+// Initialize mockUsers from storage immediately
 export const mockUsers: User[] = loadUsersFromStorage();
 
 // Dummy data for other sections (Non-critical)
@@ -1278,7 +1292,7 @@ export const mockAuditLog: AuditLogEntry[] = [
         targetUserId: 'ALL',
         targetUserName: 'ALL',
         action: 'RESET_GLOBAL',
-        details: 'Forçado reset de senha global v20.'
+        details: 'Forçado reset de senha global v21 (STABLE).'
     }
 ];
 

@@ -73,12 +73,16 @@ function App() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
+    // Debug log for development (safe to remove in prod, but helpful now)
+    console.log(`[LOGIN ATTEMPT] Email: ${cleanEmail}`);
+
     // STRICT CHECK
     const foundUser = currentUsers.find(
-      user => user.email.toLowerCase() === cleanEmail && user.password === cleanPassword
+      user => user.email.trim().toLowerCase() === cleanEmail && user.password === cleanPassword
     );
 
     if (foundUser) {
+      console.log(`[LOGIN SUCCESS] User found: ${foundUser.email}`);
       // Check if user is using temp password or flag is set
       if (foundUser.mustChangePassword || foundUser.password === TEMP_PASSWORD) {
           setPendingUser(foundUser);
@@ -89,6 +93,7 @@ function App() {
           setPassword('');
       }
     } else {
+      console.warn(`[LOGIN FAILED] Invalid credentials for: ${cleanEmail}`);
       setLoginError('E-mail ou senha inválidos. Tente novamente.');
     }
   };
@@ -116,6 +121,7 @@ function App() {
           
           // 3. Force refresh of global list just to be safe
           refreshUsersFromStorage();
+          console.log(`[PASSWORD CHANGE] Password updated for ${updatedUser.email}`);
       }
   };
 
