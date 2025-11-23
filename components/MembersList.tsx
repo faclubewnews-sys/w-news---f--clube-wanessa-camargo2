@@ -1,8 +1,6 @@
 
-
-
 import React, { useState, useMemo } from 'react';
-import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD, saveUsersToStorage } from '../data/mockData';
+import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD, updateUserInStorage } from '../data/mockData';
 import { UserCard } from './UserCard';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -105,9 +103,8 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
 
         const targetUserIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
         if (targetUserIndex !== -1) {
-            const originalRole = mockUsers[targetUserIndex].role;
-            mockUsers[targetUserIndex].role = newRole;
-            saveUsersToStorage(mockUsers);
+            const updatedUser = { ...mockUsers[targetUserIndex], role: newRole };
+            updateUserInStorage(updatedUser);
 
             const logEntry: AuditLogEntry = {
                 id: `LOG-${Date.now()}`,
@@ -117,7 +114,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                 targetUserId: selectedUser.id,
                 targetUserName: selectedUser.name,
                 action: 'Alteração de Hierarquia',
-                details: `Cargo alterado de ${roleNames[originalRole]} para ${roleNames[newRole]}.`
+                details: `Cargo alterado de ${roleNames[selectedUser.role]} para ${roleNames[newRole]}.`
             };
             mockAuditLog.push(logEntry);
             setRefreshKey(prev => prev + 1);
@@ -136,10 +133,14 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
         
         const targetUserIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
         if (targetUserIndex !== -1) {
-            mockUsers[targetUserIndex].password = TEMP_PASSWORD;
-            mockUsers[targetUserIndex].mustChangePassword = true;
-            mockUsers[targetUserIndex].resetToken = undefined;
-            saveUsersToStorage(mockUsers);
+            // Updated to use the correct persistent storage function
+            const updatedUser = {
+                ...mockUsers[targetUserIndex],
+                password: TEMP_PASSWORD,
+                mustChangePassword: true,
+                resetToken: undefined
+            };
+            updateUserInStorage(updatedUser);
             
             const logEntry: AuditLogEntry = {
                 id: `LOG-${Date.now()}`,
@@ -168,8 +169,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
             // Master editing another user: direct update
             // We merge the current mockUser with updatedFields
             const updatedUser = { ...mockUsers[targetIndex], ...updatedFields };
-            mockUsers[targetIndex] = updatedUser;
-            saveUsersToStorage(mockUsers);
+            updateUserInStorage(updatedUser);
             
             // Update local selected user state to reflect changes in the modal immediately
             setSelectedUser(updatedUser);
@@ -178,6 +178,8 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
             setRefreshKey(prev => prev + 1);
         }
     };
+
+    const canManage = currentUser.role === 'master' || currentUser.role === 'admin';
 
     return (
         <>
@@ -257,7 +259,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                                 <h4 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Ações Administrativas</h4>
                                 <div className="flex flex-wrap gap-4">
                                      {/* Reset Password - Master AND Admin */}
-                                     {(currentUser.role === 'master' || currentUser.role === 'admin') && (
+                                     {canManage && (
                                         <PrimaryButton onClick={() => setShowResetConfirm(true)}>Redefinir Senha</PrimaryButton>
                                      )}
 
@@ -267,7 +269,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                                      )}
 
                                      {/* Management Actions - Master AND Admin */}
-                                     {(currentUser.role === 'master' || currentUser.role === 'admin') && (
+                                     {canManage && (
                                         <>
                                             <button className="px-4 py-2 rounded-md text-sm font-semibold bg-yellow-500 text-white hover:bg-yellow-600">Bloquear Acesso</button>
                                             <button className="px-4 py-2 rounded-md text-sm font-semibold bg-red-500 text-white hover:bg-red-600">Excluir Membro</button>

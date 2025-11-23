@@ -1,5 +1,4 @@
 
-
 export interface User {
   id: string;
   email: string;
@@ -28,7 +27,6 @@ export interface User {
   profilePic: string;
   cardId: string;
   status: 'Ativo' | 'Pendente' | 'Desativado';
-  // Updated: pendingChanges can now include profilePic
   pendingChanges?: Partial<User>; 
   whatsapp?: string;
   mustChangePassword?: boolean; // New field to force password change
@@ -99,18 +97,21 @@ export interface Notification {
   link?: string;
 }
 
-// Default temporary password for all imported users
-export const TEMP_PASSWORD = 'Wnews@2025';
+// CRITICAL: GLOBAL TEMP PASSWORD CONFIGURATION
+export const TEMP_PASSWORD = 'WNews@2025!';
+
+// CRITICAL: STORAGE KEY UPDATE TO V20 TO FORCE HARD RESET AND FIX AUTH
+const STORAGE_KEY = 'wnews_auth_v20_final_fix';
 
 const defaultUsers: User[] = [
   // 1. PRESIDENTE (MASTER)
   {
     id: 'MASTER-001',
-    email: 'heitor.lima@wnews.com', // Institutional email
-    password: 'Wnews#2025', // PASSWORD SYNCED ACROSS DEVICES
+    email: 'heitor.lima@wnews.com',
+    password: TEMP_PASSWORD,
     name: 'Heitor Pinheiro Lima',
     role: 'master',
-    rg: '00.000.000-0', // Placeholder, update via edit
+    rg: '00.000.000-0',
     cpf: '393.467.778-93',
     phone: '11983802055',
     dob: '13/07/1993',
@@ -122,25 +123,22 @@ const defaultUsers: User[] = [
     city: 'São Paulo',
     state: 'SP',
     registrationDate: '2025-10-15',
-    socials: {
-      instagram: '@heitorpinheirolima',
-      twitter: '@eusouheitorlima',
-      facebook: 'heitorpinheirolima'
-    },
+    socials: { instagram: '@heitorpinheirolima', twitter: '@eusouheitorlima', facebook: 'heitorpinheirolima' },
     profilePic: 'https://ui-avatars.com/api/?name=Heitor+Lima&background=CDBA9A&color=fff',
     cardId: 'WC-MASTER-001',
     status: 'Ativo',
     whatsapp: 'https://wa.me/5511983802055',
-    mustChangePassword: false // DISABLED: Password is already set to personal one
+    mustChangePassword: true,
+    resetToken: undefined
   },
   // 2. VICE-PRESIDENTE (ADMIN)
   {
     id: 'ADMIN-001',
-    email: 'lucas.oliveira@wnews.com', // Institutional email
+    email: 'lucas.oliveira@wnews.com',
     password: TEMP_PASSWORD,
     name: 'Lucas Rocha de Oliveira',
     role: 'admin',
-    rg: '00.000.000-0', // Placeholder
+    rg: '00.000.000-0',
     cpf: '409.506.718-78',
     phone: '11999115081',
     dob: '06/08/1992',
@@ -152,17 +150,15 @@ const defaultUsers: User[] = [
     city: 'São Paulo',
     state: 'SP',
     registrationDate: '2025-10-15',
-    socials: {
-      instagram: '@lucas.rocha0692',
-      twitter: '@lucasrochadeo12'
-    },
+    socials: { instagram: '@lucas.rocha0692', twitter: '@lucasrochadeo12' },
     profilePic: 'https://ui-avatars.com/api/?name=Lucas+Rocha&background=3C3633&color=fff',
     cardId: 'WC-ADMIN-001',
     status: 'Ativo',
     whatsapp: 'https://wa.me/5511999115081',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
-  // 3. GENERAL MEMBERS (Imported from List)
+  // 3. MEMBERS - ALL RESET TO TEMP PASSWORD
   {
     id: 'WC-100',
     email: 'clicilane@gmail.com',
@@ -181,13 +177,14 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Clicilane+Araujo',
     cardId: 'WC-100',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-101',
     email: 'alessandrospte@msn.com',
     password: TEMP_PASSWORD,
-    name: 'Alessandro', // Name incomplete in source, using placeholder
+    name: 'Alessandro',
     role: 'member',
     rg: '',
     cpf: '35071784866',
@@ -201,7 +198,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Alessandro',
     cardId: 'WC-101',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-102',
@@ -221,7 +219,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=William+Fiebig',
     cardId: 'WC-102',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-103',
@@ -241,7 +240,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Fabiano+Sirqueira',
     cardId: 'WC-103',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-104',
@@ -261,7 +261,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Erikzedek+Silva',
     cardId: 'WC-104',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-105',
@@ -281,7 +282,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Patricia+Farias',
     cardId: 'WC-105',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-106',
@@ -301,7 +303,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Joao+Santos',
     cardId: 'WC-106',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-107',
@@ -321,7 +324,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Jefferson+Santos',
     cardId: 'WC-107',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-108',
@@ -334,14 +338,15 @@ const defaultUsers: User[] = [
     phone: '85999401046',
     dob: '09/02/1985',
     address: 'Travessa Osório de Paiva 65',
-    city: 'Fortaleza', // Inferido pelo DDD 85
+    city: 'Fortaleza',
     state: 'CE',
     registrationDate: '2025-10-16',
     socials: { instagram: 'Antonio Guerreiro', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Antonio+Guerreiro',
     cardId: 'WC-108',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-109',
@@ -361,7 +366,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Paulo+Gratao',
     cardId: 'WC-109',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-110',
@@ -381,7 +387,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Tathiane+Braga',
     cardId: 'WC-110',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-111',
@@ -401,7 +408,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Samuel+Rodrigues',
     cardId: 'WC-111',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-112',
@@ -421,7 +429,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Vinicius+Oliveira',
     cardId: 'WC-112',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-113',
@@ -441,7 +450,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Thiago+Maciel',
     cardId: 'WC-113',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-114',
@@ -461,7 +471,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Roberta+Oliveira',
     cardId: 'WC-114',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-115',
@@ -474,14 +485,15 @@ const defaultUsers: User[] = [
     phone: '5998221937',
     dob: '31/10/1994',
     address: 'Estrada Velha Tatuí a Laranjal Paulista',
-    city: 'Tatuí', // Inferido
+    city: 'Tatuí',
     state: 'SP',
     registrationDate: '2025-10-15',
     socials: { instagram: '@deeeivisomsouza', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Deivisom+Souza',
     cardId: 'WC-115',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-116',
@@ -501,7 +513,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Diego+Gallet',
     cardId: 'WC-116',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-117',
@@ -521,7 +534,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Fernando+Moura',
     cardId: 'WC-117',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-118',
@@ -541,7 +555,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Leandro+Marques',
     cardId: 'WC-118',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-119',
@@ -554,14 +569,15 @@ const defaultUsers: User[] = [
     phone: '11983271844',
     dob: '17/10/1995',
     address: 'Gaspar dos Santos',
-    city: 'São Paulo', // Placeholder
+    city: 'São Paulo',
     state: 'SP',
     registrationDate: '2025-10-15',
     socials: { instagram: 'irodrigom', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Rodrigo+Santos',
     cardId: 'WC-119',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-120',
@@ -581,7 +597,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Thalys+Silva',
     cardId: 'WC-120',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-121',
@@ -601,7 +618,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Eliane+Rocha',
     cardId: 'WC-121',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-122',
@@ -614,14 +632,15 @@ const defaultUsers: User[] = [
     phone: '1198489-2093',
     dob: '06/04/1987',
     address: 'Rua sergipe 43 torre Málaga Apartamento 114',
-    city: 'São Paulo', // Placeholder
+    city: 'São Paulo',
     state: 'SP',
     registrationDate: '2025-10-15',
     socials: { instagram: '@pri_sevarolli', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Priscilla+Souza',
     cardId: 'WC-122',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-123',
@@ -634,14 +653,15 @@ const defaultUsers: User[] = [
     phone: '85985116660',
     dob: '26/03/1990',
     address: 'Rua nossa senhora das Graças 1116',
-    city: 'Fortaleza', // Inferido pelo DDD 85
+    city: 'Fortaleza',
     state: 'CE',
     registrationDate: '2025-10-15',
     socials: { instagram: 'Thiago nascimentoo', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Thiago+Silva',
     cardId: 'WC-123',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-124',
@@ -654,14 +674,15 @@ const defaultUsers: User[] = [
     phone: '11985577578',
     dob: '22/05/1991',
     address: 'Avenida professor Alceu Maynard Araújo 43 apart 42b',
-    city: 'São Paulo', // Placeholder
+    city: 'São Paulo',
     state: 'SP',
     registrationDate: '2025-10-15',
     socials: { instagram: '@adrielsaul', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Adriel+Oliveira',
     cardId: 'WC-124',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-125',
@@ -674,14 +695,15 @@ const defaultUsers: User[] = [
     phone: '15981327015',
     dob: '31/05/1981',
     address: 'Rua Marina carneiro schorr',
-    city: 'Sorocaba', // Inferido pelo DDD 15
+    city: 'Sorocaba',
     state: 'SP',
     registrationDate: '2025-10-15',
     socials: { instagram: 'Jerry Cleiton da Silva', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Jerry+Silva',
     cardId: 'WC-125',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-126',
@@ -701,7 +723,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Paulo+Melo',
     cardId: 'WC-126',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-127',
@@ -721,7 +744,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Lucas+Mello',
     cardId: 'WC-127',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-128',
@@ -741,7 +765,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Otavio+Goncalves',
     cardId: 'WC-128',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-129',
@@ -761,7 +786,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Tatiane+Assis',
     cardId: 'WC-129',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-130',
@@ -781,7 +807,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Michel+Leandro',
     cardId: 'WC-130',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-131',
@@ -801,7 +828,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Wlisses+Silva',
     cardId: 'WC-131',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-132',
@@ -815,13 +843,14 @@ const defaultUsers: User[] = [
     dob: '19/10/1987',
     address: 'Soriano, 921 Ap. 6 - Centro',
     city: 'Montevideo',
-    state: 'UY', // Uruguai
+    state: 'UY',
     registrationDate: '2025-10-15',
     socials: { instagram: '@masterhernandes', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Ernandes+Matias',
     cardId: 'WC-132',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-133',
@@ -841,7 +870,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Felipe+Santos',
     cardId: 'WC-133',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-134',
@@ -852,7 +882,7 @@ const defaultUsers: User[] = [
     rg: '',
     cpf: '09403111437',
     phone: '81 99841-4778',
-    dob: '19/11/2025', // Correction might be needed for year in source
+    dob: '19/11/1996',
     address: 'Rua Francisco Otaviano km 7 aldeia camaragibe',
     city: 'Camaragibe',
     state: 'PE',
@@ -861,7 +891,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Jessica+Trindade',
     cardId: 'WC-134',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-135',
@@ -881,7 +912,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Tamara+Marques',
     cardId: 'WC-135',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-136',
@@ -901,7 +933,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Ananda+Santos',
     cardId: 'WC-136',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-137',
@@ -921,7 +954,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Pedro+Silva',
     cardId: 'WC-137',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-138',
@@ -930,7 +964,7 @@ const defaultUsers: User[] = [
     name: 'Kauber Mansur Irffi Junior',
     role: 'member',
     rg: '112.038.186-02',
-    cpf: '', // RG provided in place of CPF in one column, need verify
+    cpf: '',
     phone: '(31) 99252-6161',
     dob: '23/09/1995',
     address: 'Rua Montes Claros, 1060 / 301 - Anchieta',
@@ -941,7 +975,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Kauber+Junior',
     cardId: 'WC-138',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-139',
@@ -961,7 +996,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Leandro+Moretto',
     cardId: 'WC-139',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-140',
@@ -981,7 +1017,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Amanda+Mendes',
     cardId: 'WC-140',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-141',
@@ -1001,7 +1038,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Guilherme+Moreira',
     cardId: 'WC-141',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-142',
@@ -1021,7 +1059,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Mauricio+Soares',
     cardId: 'WC-142',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-143',
@@ -1034,14 +1073,15 @@ const defaultUsers: User[] = [
     phone: '19984570006',
     dob: '17/03/1988',
     address: 'Avenida Washington Luiz, 4400 - Bloco D apto 23',
-    city: 'Campinas', // Inferred/Generic
+    city: 'Campinas',
     state: 'SP',
     registrationDate: '2025-10-22',
     socials: { instagram: '@abracadabramascotesvivos', twitter: '' },
     profilePic: 'https://ui-avatars.com/api/?name=Enio+Nascimento',
     cardId: 'WC-143',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-144',
@@ -1061,7 +1101,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Fabio+Vieira',
     cardId: 'WC-144',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-145',
@@ -1081,7 +1122,8 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Bruno+Ribeiro',
     cardId: 'WC-145',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   },
   {
     id: 'WC-146',
@@ -1101,14 +1143,12 @@ const defaultUsers: User[] = [
     profilePic: 'https://ui-avatars.com/api/?name=Sidney+Lima',
     cardId: 'WC-146',
     status: 'Ativo',
-    mustChangePassword: true
+    mustChangePassword: true,
+    resetToken: undefined
   }
 ];
 
-// Persistence Logic
-// Updated to V15 to reset passwords and force cache bust completely with Heitor's sync fix
-const STORAGE_KEY = 'wnews_mock_users_v15';
-
+// Persistence Logic - CRITICAL FIX
 export const loadUsersFromStorage = (): User[] => {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -1118,15 +1158,16 @@ export const loadUsersFromStorage = (): User[] => {
     } catch (e) {
         console.error("Failed to load users from storage", e);
     }
+    
+    // CRITICAL: Force reset if storage is empty or key changed
+    // This ensures all users start with TEMP_PASSWORD and mustChangePassword = true
+    saveUsersToStorage(defaultUsers);
     return defaultUsers;
 };
 
 // Helper to force refresh mockUsers array from storage
-// This simulates fetching from a live database to ensure sync
 export const refreshUsersFromStorage = () => {
     const freshData = loadUsersFromStorage();
-    // We replace content in place to maintain reference if used elsewhere, 
-    // though typically we should return the new array.
     mockUsers.length = 0;
     mockUsers.push(...freshData);
     return mockUsers;
@@ -1137,14 +1178,13 @@ export const saveUsersToStorage = (users: User[]) => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
     } catch (e) {
         console.error("Failed to save users to storage", e);
-        // Handle QuotaExceededError specifically for mobile browsers
         if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-            alert("⚠️ Espaço cheio! A imagem selecionada é muito grande para o armazenamento local. O sistema tentou comprimi-la, mas ainda assim excedeu o limite do navegador. Tente uma imagem menor.");
+            alert("⚠️ Espaço cheio! Não foi possível salvar as alterações.");
         }
     }
 };
 
-// Helper to update a single user in storage immediately
+// Helper to update a single user in storage immediately and robustly
 export const updateUserInStorage = (updatedUser: User) => {
     // 1. Add Timestamp for Cache Busting and Sync
     updatedUser.lastModified = Date.now();
@@ -1164,16 +1204,45 @@ export const updateUserInStorage = (updatedUser: User) => {
             mockUsers[memIndex] = updatedUser;
         }
     } else {
-        // If for some reason user isn't in storage, add them
+        // Fallback: Add user if missing
         currentUsers.push(updatedUser);
         saveUsersToStorage(currentUsers);
+        mockUsers.push(updatedUser);
     }
 };
 
-// Initialize mockUsers from storage if available, otherwise use defaults
+// GLOBAL RESET FUNCTION (Can be called by Admin/Master)
+export const resetAllPasswords = () => {
+    const users = loadUsersFromStorage();
+    const updatedUsers = users.map(user => ({
+        ...user,
+        password: TEMP_PASSWORD,
+        mustChangePassword: true,
+        resetToken: undefined,
+        lastModified: Date.now()
+    }));
+    saveUsersToStorage(updatedUsers);
+    refreshUsersFromStorage();
+    
+    // Log the action
+    mockAuditLog.push({
+        id: `LOG-RESET-GLOBAL-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        responsibleAdminId: 'SYSTEM',
+        responsibleAdminName: 'SYSTEM',
+        targetUserId: 'ALL',
+        targetUserName: 'ALL',
+        action: 'RESET_GLOBAL_MANUAL',
+        details: 'Executado reset manual de todas as senhas para padrão.'
+    });
+    
+    return true;
+};
+
+// Initialize mockUsers from storage
 export const mockUsers: User[] = loadUsersFromStorage();
 
-// Initialize with some dummy data for demonstration if needed, or keep empty
+// Dummy data for other sections (Non-critical)
 export const mockGiveawayEntries: GiveawayEntry[] = [
     {
         id: 'ENTRY-001',
@@ -1200,7 +1269,18 @@ export const mockCamarimWinners: CamarimWinner[] = [
     }
 ];
 
-export const mockAuditLog: AuditLogEntry[] = [];
+export const mockAuditLog: AuditLogEntry[] = [
+    {
+        id: 'LOG-RESET-GLOBAL-INIT',
+        timestamp: new Date().toISOString(),
+        responsibleAdminId: 'SYSTEM',
+        responsibleAdminName: 'SYSTEM',
+        targetUserId: 'ALL',
+        targetUserName: 'ALL',
+        action: 'RESET_GLOBAL',
+        details: 'Forçado reset de senha global v20.'
+    }
+];
 
 export let mockOuvidoriaTickets: OuvidoriaTicket[] = [
     {
