@@ -56,12 +56,6 @@ export const MailIcon: React.FC<IconProps> = ({ className = "w-6 h-6" }) => (
     </svg>
 );
 
-export const OuvidoriaIcon: React.FC<IconProps> = ({ className = "w-6 h-6" }) => (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-    </svg>
-);
-
 export const TicketIcon: React.FC<IconProps> = ({ className = "w-6 h-6" }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2a3 3 0 11-6 0V5a3 3 0 116 0zm6 6h-1a3 3 0 00-3 3v2a3 3 0 003 3h1m-18 0h1a3 3 0 003-3v-2a3 3 0 00-3-3H3m12-6h5.5a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5H15m-6 0H3.5A1.5 1.5 0 012 19V6.5A1.5 1.5 0 013.5 5H9" />

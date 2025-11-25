@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, mockUsers } from '../data/mockData';
 import { ActiveView } from './Dashboard';
-import { UserCircleIcon, CardIcon, StarIcon, ShieldIcon, OuvidoriaIcon, TicketIcon, MegaphoneIcon } from './icons/UiIcons';
+import { UserCircleIcon, CardIcon, StarIcon, ShieldIcon, TicketIcon, MegaphoneIcon } from './icons/UiIcons';
 import { WhatsAppIcon, InstagramIcon, TwitterIcon, FacebookIcon, TiktokIcon } from './icons/SocialIcons';
 import { ButterflyIcon } from './ButterflyIcon';
 import { CommunityGallery } from './CommunityGallery';
@@ -99,7 +99,6 @@ export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, th
                 <NavItem icon={<TicketIcon />} label="Sorteios" onClick={() => onNavigate('sorteios')} />
                 <NavItem icon={<StarIcon />} label="Camarim" onClick={() => onNavigate('camarim')} />
                 <NavItem icon={<ButterflyIcon />} label="Wanessa Camargo" onClick={() => onNavigate('wanessa')} />
-                <NavItem icon={<OuvidoriaIcon />} label="Ouvidoria" onClick={() => onNavigate('ouvidoria')} />
                 {canManage && (
                     <>
                         <NavItem icon={<MegaphoneIcon />} label="Envio de Push" onClick={() => onNavigate('push')} />

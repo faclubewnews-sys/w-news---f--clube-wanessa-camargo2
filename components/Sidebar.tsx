@@ -1,18 +1,16 @@
 
 import React from 'react';
 import { ButterflyIcon } from './ButterflyIcon';
-import { User, mockOuvidoriaTickets } from '../data/mockData';
-import { HomeIcon, UserCircleIcon, ShieldIcon, StarIcon, OuvidoriaIcon, TicketIcon } from './icons/UiIcons';
+import { User } from '../data/mockData';
+import { HomeIcon, UserCircleIcon, ShieldIcon, StarIcon, TicketIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   user: User;
-  onNavigate: (view: 'home' | 'profile' | 'management' | 'wanessa' | 'ouvidoria' | 'sorteios') => void;
+  onNavigate: (view: 'home' | 'profile' | 'management' | 'wanessa' | 'sorteios') => void;
   onContactClick: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ user, onNavigate, onContactClick }) => {
-  const pendingOuvidoriaCount = mockOuvidoriaTickets.filter(t => t.status === 'Pendente').length;
-  
   return (
     <aside className="w-64 bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 p-6 hidden lg:flex flex-col gap-8 h-screen sticky top-0 border-r border-brand-gold/20 dark:border-dark-icon/50">
       <div className="flex items-center gap-3">
@@ -42,14 +40,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onNavigate, onContactCli
         </button>
          <button onClick={() => onNavigate('wanessa')} className="text-sm font-semibold flex items-center gap-3 hover:text-brand-gold dark:hover:text-dark-accent transition-colors">
             <StarIcon className="w-5 h-5" /> Wanessa Camargo
-        </button>
-         <button onClick={() => onNavigate('ouvidoria')} className="text-sm font-semibold flex items-center gap-3 hover:text-brand-gold dark:hover:text-dark-accent transition-colors relative">
-            <OuvidoriaIcon className="w-5 h-5" /> Ouvidoria
-            {pendingOuvidoriaCount > 0 && (user.role === 'master' || user.role === 'admin') && (
-              <span className="absolute left-4 top-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {pendingOuvidoriaCount}
-              </span>
-            )}
         </button>
       </nav>
 

@@ -9,7 +9,6 @@ import { DigitalCardView } from './DigitalCardView';
 import { CamarimView } from './CamarimView';
 import { BackButton } from './BackButton';
 import { WanessaCamargoView } from './WanessaCamargoView';
-import { OuvidoriaPage } from './OuvidoriaPage';
 import { SorteiosView } from './SorteiosView';
 import { PushNotificationPanel } from './PushNotificationPanel';
 import { MandatoryNotifications } from './MandatoryNotifications';
@@ -25,7 +24,7 @@ interface DashboardProps {
   lastUpdate: number;
 }
 
-export type ActiveView = 'home' | 'profile' | 'management' | 'card' | 'camarim' | 'wanessa' | 'ouvidoria' | 'sorteios' | 'push';
+export type ActiveView = 'home' | 'profile' | 'management' | 'card' | 'camarim' | 'wanessa' | 'sorteios' | 'push';
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onToggleTheme, onContactClick, onUserUpdate, lastUpdate }) => {
   const [activeView, setActiveView] = useState<ActiveView>('home');
@@ -98,9 +97,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onT
         break;
       case 'wanessa':
         viewComponent = <WanessaCamargoView />;
-        break;
-      case 'ouvidoria':
-        viewComponent = <OuvidoriaPage user={user} />;
         break;
       case 'sorteios':
         viewComponent = <SorteiosView user={user} />;

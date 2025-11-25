@@ -67,25 +67,6 @@ export interface AuditLogEntry {
     details: string; 
 }
 
-export interface OuvidoriaMessage {
-    id: string;
-    author: 'member' | 'admin';
-    text: string;
-    timestamp: string; // ISO string
-}
-
-export type OuvidoriaTicketType = 'Sugestão' | 'Reclamação' | 'Elogio' | 'Dúvida' | 'Outro';
-
-export interface OuvidoriaTicket {
-    id: string;
-    memberId: string; // This is kept for linking, but NEVER displayed to admins.
-    subject: string;
-    type: OuvidoriaTicketType;
-    messages: OuvidoriaMessage[];
-    status: 'Pendente' | 'Respondida' | 'Resolvida';
-    createdAt: string; // ISO string
-}
-
 export interface Notification {
   id: string;
   title: string;
@@ -97,12 +78,32 @@ export interface Notification {
   link?: string;
 }
 
+// FIX: Add missing types and exports for Ouvidoria feature.
+export type OuvidoriaTicketType = 'Sugestão' | 'Reclamação' | 'Elogio' | 'Dúvida' | 'Outro';
+
+export interface OuvidoriaMessage {
+  id: string;
+  author: 'member' | 'admin';
+  text: string;
+  timestamp: string; // ISO string
+}
+
+export interface OuvidoriaTicket {
+  id: string;
+  memberId: string; // User ID
+  subject: string;
+  type: OuvidoriaTicketType;
+  createdAt: string; // ISO string
+  status: 'Pendente' | 'Respondida' | 'Resolvida';
+  messages: OuvidoriaMessage[];
+}
+
 // CRITICAL: GLOBAL TEMP PASSWORD CONFIGURATION
 export const TEMP_PASSWORD = 'WNews@2025!';
 
-// CRITICAL: STORAGE KEY UPDATE TO V21 - STABLE VERSION
+// CRITICAL: STORAGE KEY UPDATE TO V22_STABLE_FINAL
 // This key change forces a fresh load of the default users with the correct password.
-const STORAGE_KEY = 'wnews_auth_v21_FINAL_STABLE';
+const STORAGE_KEY = 'wnews_auth_v22_STABLE_FINAL';
 
 const defaultUsers: User[] = [
   // 1. PRESIDENTE (MASTER)
@@ -1149,7 +1150,7 @@ const defaultUsers: User[] = [
   }
 ];
 
-// Persistence Logic - CRITICAL FIX V21
+// Persistence Logic - CRITICAL FIX V22
 
 // Helper to save users to storage SAFELY
 export const saveUsersToStorage = (users: User[]) => {
@@ -1292,22 +1293,7 @@ export const mockAuditLog: AuditLogEntry[] = [
         targetUserId: 'ALL',
         targetUserName: 'ALL',
         action: 'RESET_GLOBAL',
-        details: 'Forçado reset de senha global v21 (STABLE).'
-    }
-];
-
-export let mockOuvidoriaTickets: OuvidoriaTicket[] = [
-    {
-        id: 'OUV-001',
-        memberId: 'WC-100',
-        subject: 'Sugestão para o App',
-        type: 'Sugestão',
-        createdAt: '2024-07-28T10:00:00Z',
-        status: 'Respondida',
-        messages: [
-            { id: 'MSG-001', author: 'member', text: 'Seria legal ter uma galeria de fotos dos eventos.', timestamp: '2024-07-28T10:00:00Z' },
-            { id: 'MSG-002', author: 'admin', text: 'Ótima sugestão! Estamos avaliando a possibilidade de implementar uma galeria em futuras atualizações. Obrigado pelo feedback!', timestamp: '2024-07-28T14:30:00Z' }
-        ]
+        details: 'Forçado reset de senha global v22 (STABLE).'
     }
 ];
 
@@ -1320,4 +1306,30 @@ export const mockNotifications: Notification[] = [
     date: new Date().toISOString(),
     read: false
   }
+];
+
+// FIX: Add missing mock data for Ouvidoria feature.
+export const mockOuvidoriaTickets: OuvidoriaTicket[] = [
+    {
+        id: 'OUV-1689930000000',
+        memberId: 'WC-100', // Clicilane
+        subject: 'Sugestão para o App',
+        type: 'Sugestão',
+        createdAt: new Date('2024-07-21T10:00:00Z').toISOString(),
+        status: 'Respondida',
+        messages: [
+            {
+                id: 'MSG-1689930000000',
+                author: 'member',
+                text: 'Olá! Seria incrível se tivéssemos uma seção para compartilhar fotos de encontros e shows. Ajudaria a conectar ainda mais a comunidade!',
+                timestamp: new Date('2024-07-21T10:00:00Z').toISOString()
+            },
+            {
+                id: 'MSG-1689944400000',
+                author: 'admin',
+                text: 'Olá Clicilane! Adoramos a sugestão. A equipe de desenvolvimento já está ciente e vamos estudar a possibilidade. Obrigado por ajudar a melhorar nosso espaço!',
+                timestamp: new Date('2024-07-21T14:00:00Z').toISOString()
+            }
+        ]
+    }
 ];
