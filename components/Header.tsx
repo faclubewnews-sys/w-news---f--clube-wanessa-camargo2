@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { User, mockNotifications } from '../data/mockData';
 import { ButterflyIcon } from './ButterflyIcon';
@@ -13,11 +12,15 @@ interface HeaderProps {
   onContactClick: () => void;
 }
 
-const getRoleName = (role: 'master' | 'admin' | 'member') => {
-  switch (role) {
+const getRoleName = (user: User): string => {
+  if (user.subtitle) {
+    return user.subtitle;
+  }
+  switch (user.role) {
     case 'master': return 'Presidente';
     case 'admin': return 'Vice-Presidente';
     case 'member': return 'Membro';
+    default: return '';
   }
 };
 
@@ -83,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, theme, onToggleT
         <ButterflyIcon className="w-8 h-8 text-brand-gold dark:text-dark-accent" />
         <div>
           <h1 className="font-bold text-lg text-brand-text dark:text-dark-accent">{user.name}</h1>
-          <p className="text-xs text-brand-text/70 dark:text-dark-text-soft">{getRoleName(user.role)}</p>
+          <p className="text-xs text-brand-text/70 dark:text-dark-text-soft">{getRoleName(user)}</p>
         </div>
       </div>
       <div className="flex items-center gap-4">

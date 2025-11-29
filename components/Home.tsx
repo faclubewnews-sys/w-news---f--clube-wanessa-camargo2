@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { User, mockUsers } from '../data/mockData';
 import { ActiveView } from './Dashboard';
@@ -85,7 +86,7 @@ export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, th
                             <img src={vicePresident.profilePic} alt={vicePresident.name} className="w-16 h-16 rounded-full object-cover ring-2 ring-brand-gold/50 dark:ring-dark-accent/50"/>
                             <div>
                                 <p className="font-bold text-brand-text dark:text-dark-text-soft text-left">{vicePresident.name}</p>
-                                <p className="text-sm text-brand-text/70 dark:text-dark-text-soft text-left">Vice-Presidente</p>
+                                <p className="text-sm text-brand-text/70 dark:text-dark-text-soft text-left">{vicePresident.subtitle || 'Vice-Presidente'}</p>
                                 {vicePresident.whatsapp && (
                                     <a href={vicePresident.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400 font-semibold mt-1 hover:underline">
                                         <WhatsAppIcon className="w-4 h-4" /> Contato
