@@ -1,6 +1,7 @@
 
+
 import React, { useState, useMemo } from 'react';
-import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD, updateUserInStorage } from '../data/mockData';
+import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD, updateUserInStorage, saveUsersToStorage } from '../data/mockData';
 import { UserCard } from './UserCard';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -40,7 +41,8 @@ const FilterSelect: React.FC<{ value: string, onChange: (e: React.ChangeEvent<HT
 const roleNames: { [key in User['role']]: string } = {
     member: 'Membro',
     admin: 'Administrativo',
-    master: 'Presidente'
+    master: 'Presidente',
+    assistant: 'Assistente',
 };
 
 export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
@@ -49,14 +51,20 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
     const [cityFilter, setCityFilter] = useState('');
     const [stateFilter, setStateFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [metWanessaFilter, setMetWanessaFilter] = useState('');
     
     // State to force list refresh after updates
     const [refreshKey, setRefreshKey] = useState(0);
+    const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
     const [isHierarchyModalOpen, setHierarchyModalOpen] = useState(false);
     const [showHierarchyConfirm, setShowHierarchyConfirm] = useState(false);
     const [newRole, setNewRole] = useState<User['role']>('member');
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [userHistory, setUserHistory] = useState<AuditLogEntry[]>([]);
 
 
     const { uniqueCities, uniqueStates } = useMemo(() => {
@@ -82,10 +90,16 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
             const matchesCity = cityFilter === '' || user.city === cityFilter;
             const matchesState = stateFilter === '' || user.state === stateFilter;
             const matchesStatus = statusFilter === '' || user.status === statusFilter;
+            const matchesMetWanessa = metWanessaFilter === '' || user.hasMetWanessa === metWanessaFilter;
             
-            return matchesSearch && matchesCity && matchesState && matchesStatus;
+            return matchesSearch && matchesCity && matchesState && matchesStatus && matchesMetWanessa;
         });
-    }, [searchTerm, cityFilter, stateFilter, statusFilter, refreshKey]);
+    }, [searchTerm, cityFilter, stateFilter, statusFilter, metWanessaFilter, refreshKey]);
+
+    const showFeedback = (message: string) => {
+        setFeedbackMessage(message);
+        setTimeout(() => setFeedbackMessage(null), 3000);
+    }
 
     const handleOpenHierarchyModal = () => {
         if (selectedUser) {
@@ -101,82 +115,114 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
             return;
         }
 
-        const targetUserIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
-        if (targetUserIndex !== -1) {
-            const updatedUser = { ...mockUsers[targetUserIndex], role: newRole };
-            updateUserInStorage(updatedUser);
+        const updatedUser = { ...selectedUser, role: newRole };
+        updateUserInStorage(updatedUser);
 
-            const logEntry: AuditLogEntry = {
-                id: `LOG-${Date.now()}`,
-                timestamp: new Date().toISOString(),
-                responsibleAdminId: currentUser.id,
-                responsibleAdminName: currentUser.name,
-                targetUserId: selectedUser.id,
-                targetUserName: selectedUser.name,
-                action: 'Alteração de Hierarquia',
-                details: `Cargo alterado de ${roleNames[selectedUser.role]} para ${roleNames[newRole]}.`
-            };
-            mockAuditLog.push(logEntry);
-            setRefreshKey(prev => prev + 1);
-        }
-
+        const logEntry: AuditLogEntry = {
+            id: `LOG-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            responsibleAdminId: currentUser.id,
+            responsibleAdminName: currentUser.name,
+            targetUserId: selectedUser.id,
+            targetUserName: selectedUser.name,
+            action: 'Alteração de Hierarquia',
+            details: `Cargo alterado de ${roleNames[selectedUser.role]} para ${roleNames[newRole]}.`
+        };
+        mockAuditLog.push(logEntry);
+        
+        showFeedback("Hierarquia alterada com sucesso.");
+        setRefreshKey(prev => prev + 1);
         setShowHierarchyConfirm(false);
         setHierarchyModalOpen(false);
-        if (selectedUser) {
-             const updated = mockUsers.find(u => u.id === selectedUser.id);
-             if (updated) setSelectedUser({...updated});
-        }
+        setSelectedUser(updatedUser);
     };
 
     const handleResetPassword = () => {
         if (!selectedUser) return;
         
-        const targetUserIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
-        if (targetUserIndex !== -1) {
-            // Updated to use the correct persistent storage function
-            const updatedUser = {
-                ...mockUsers[targetUserIndex],
-                password: TEMP_PASSWORD,
-                mustChangePassword: true,
-                resetToken: undefined
-            };
-            updateUserInStorage(updatedUser);
-            
-            const logEntry: AuditLogEntry = {
-                id: `LOG-${Date.now()}`,
-                timestamp: new Date().toISOString(),
-                responsibleAdminId: currentUser.id,
-                responsibleAdminName: currentUser.name,
-                targetUserId: selectedUser.id,
-                targetUserName: selectedUser.name,
-                action: 'Reset de Senha Administrativo',
-                details: `Senha redefinida para padrão (${TEMP_PASSWORD}) e troca obrigatória ativada.`
-            };
-            mockAuditLog.push(logEntry);
+        const updatedUser = {
+            ...selectedUser,
+            password: TEMP_PASSWORD,
+            mustChangePassword: true,
+            resetToken: undefined
+        };
+        updateUserInStorage(updatedUser);
+        
+        const logEntry: AuditLogEntry = {
+            id: `LOG-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            responsibleAdminId: currentUser.id,
+            responsibleAdminName: currentUser.name,
+            targetUserId: selectedUser.id,
+            targetUserName: selectedUser.name,
+            action: 'Reset de Senha',
+            details: `Senha redefinida para padrão e troca obrigatória ativada.`
+        };
+        mockAuditLog.push(logEntry);
 
-            alert(`Senha redefinida com sucesso para: ${TEMP_PASSWORD}`);
-            setShowResetConfirm(false);
-            setRefreshKey(prev => prev + 1);
-        }
+        showFeedback(`Senha de ${selectedUser.name} redefinida para: ${TEMP_PASSWORD}`);
+        setShowResetConfirm(false);
+        setRefreshKey(prev => prev + 1);
+        setSelectedUser(updatedUser);
     };
 
-    // New Handler to save edits from UserCard
+    const handleBlockUser = () => {
+        if (!selectedUser) return;
+
+        const newStatus = selectedUser.status === 'Desativado' ? 'Ativo' : 'Desativado';
+        const updatedUser = { ...selectedUser, status: newStatus };
+        updateUserInStorage(updatedUser);
+
+        mockAuditLog.push({
+            id: `LOG-${Date.now()}`, timestamp: new Date().toISOString(), responsibleAdminId: currentUser.id,
+            responsibleAdminName: currentUser.name, targetUserId: selectedUser.id, targetUserName: selectedUser.name,
+            action: 'Bloqueio de Acesso', details: `Status alterado para ${newStatus}.`
+        });
+
+        showFeedback(`Acesso de ${selectedUser.name} foi ${newStatus === 'Desativado' ? 'bloqueado' : 'reativado'}.`);
+        setShowBlockConfirm(false);
+        setRefreshKey(prev => prev + 1);
+        setSelectedUser(updatedUser);
+    };
+
+    const handleDeleteUser = () => {
+        if (!selectedUser) return;
+        
+        const index = mockUsers.findIndex(u => u.id === selectedUser.id);
+        if (index > -1) {
+            const deletedName = mockUsers[index].name;
+            mockUsers.splice(index, 1);
+            saveUsersToStorage(mockUsers);
+
+            mockAuditLog.push({
+                id: `LOG-${Date.now()}`, timestamp: new Date().toISOString(), responsibleAdminId: currentUser.id,
+                responsibleAdminName: currentUser.name, targetUserId: selectedUser.id, targetUserName: deletedName,
+                action: 'Exclusão de Membro', details: `Membro ${deletedName} foi permanentemente excluído.`
+            });
+
+            showFeedback(`Membro ${deletedName} excluído com sucesso.`);
+            setShowDeleteConfirm(false);
+            setRefreshKey(prev => prev + 1);
+            setSelectedUser(null);
+        }
+    };
+    
+    const handleViewHistory = () => {
+        if (!selectedUser) return;
+        const history = mockAuditLog.filter(log => log.targetUserId === selectedUser.id);
+        setUserHistory(history);
+        setShowHistoryModal(true);
+    };
+
+
     const handleUserUpdate = (updatedFields: Partial<User>) => {
         if (!selectedUser) return;
 
-        const targetIndex = mockUsers.findIndex(u => u.id === selectedUser.id);
-        if (targetIndex !== -1) {
-            // Master editing another user: direct update
-            // We merge the current mockUser with updatedFields
-            const updatedUser = { ...mockUsers[targetIndex], ...updatedFields };
-            updateUserInStorage(updatedUser);
-            
-            // Update local selected user state to reflect changes in the modal immediately
-            setSelectedUser(updatedUser);
-            
-            // Force list refresh
-            setRefreshKey(prev => prev + 1);
-        }
+        const updatedUser = { ...selectedUser, ...updatedFields };
+        updateUserInStorage(updatedUser);
+        
+        setSelectedUser(updatedUser);
+        setRefreshKey(prev => prev + 1);
     };
 
     const canManage = currentUser.role === 'master' || currentUser.role === 'admin';
@@ -186,7 +232,13 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
             <div className="bg-brand-bg-light/50 dark:bg-dark-bg-secondary rounded-lg shadow-lg p-4 sm:p-6">
                 <h3 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Membros Cadastrados</h3>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {feedbackMessage && (
+                     <div className="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded-md text-sm font-semibold shadow-sm animate-fade-in text-center">
+                        {feedbackMessage}
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                     <FilterInput value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por Nome ou ID..." />
                     <FilterSelect value={cityFilter} onChange={e => setCityFilter(e.target.value)}>
                         <option value="">Todas as Cidades</option>
@@ -202,6 +254,13 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                         <option value="Pendente">Pendente</option>
                         <option value="Desativado">Desativado</option>
                     </FilterSelect>
+                    {canManage && (
+                         <FilterSelect value={metWanessaFilter} onChange={e => setMetWanessaFilter(e.target.value)}>
+                            <option value="">Conhece a Wanessa?</option>
+                            <option value="Sim">Sim</option>
+                            <option value="Não">Não</option>
+                        </FilterSelect>
+                    )}
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -255,29 +314,24 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                                 onUpdateUser={handleUserUpdate}
                             />
 
-                             <div className="mt-8 pt-6 border-t border-brand-gold/20 dark:border-dark-icon/50">
-                                <h4 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Ações Administrativas</h4>
-                                <div className="flex flex-wrap gap-4">
-                                     {/* Reset Password - Master AND Admin */}
-                                     {canManage && (
+                             {canManage && (
+                                <div className="mt-8 pt-6 border-t border-brand-gold/20 dark:border-dark-icon/50">
+                                    <h4 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Ações Administrativas</h4>
+                                    <div className="flex flex-wrap gap-4">
                                         <PrimaryButton onClick={() => setShowResetConfirm(true)}>Redefinir Senha</PrimaryButton>
-                                     )}
 
-                                     {/* Hierarchy - Master Only */}
-                                     {currentUser.role === 'master' && (
-                                        <PrimaryButton onClick={handleOpenHierarchyModal}>Alterar Hierarquia</PrimaryButton>
-                                     )}
-
-                                     {/* Management Actions - Master AND Admin */}
-                                     {canManage && (
-                                        <>
-                                            <button className="px-4 py-2 rounded-md text-sm font-semibold bg-yellow-500 text-white hover:bg-yellow-600">Bloquear Acesso</button>
-                                            <button className="px-4 py-2 rounded-md text-sm font-semibold bg-red-500 text-white hover:bg-red-600">Excluir Membro</button>
-                                            <button className="px-4 py-2 rounded-md text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline">Ver Histórico</button>
-                                        </>
-                                     )}
+                                        {currentUser.role === 'master' && (
+                                            <PrimaryButton onClick={handleOpenHierarchyModal}>Alterar Hierarquia</PrimaryButton>
+                                        )}
+                                        
+                                        <button onClick={() => setShowBlockConfirm(true)} className="px-4 py-2 rounded-md text-sm font-semibold bg-yellow-500 text-white hover:bg-yellow-600">
+                                            {selectedUser.status === 'Desativado' ? 'Reativar Acesso' : 'Bloquear Acesso'}
+                                        </button>
+                                        <button onClick={() => setShowDeleteConfirm(true)} className="px-4 py-2 rounded-md text-sm font-semibold bg-red-500 text-white hover:bg-red-600">Excluir Membro</button>
+                                        <button onClick={handleViewHistory} className="px-4 py-2 rounded-md text-sm font-semibold text-gray-700 dark:text-gray-300 hover:underline">Ver Histórico</button>
+                                    </div>
                                 </div>
-                            </div>
+                             )}
                         </div>
                      </div>
                 </div>
@@ -289,7 +343,6 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                         <h3 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Alterar Hierarquia</h3>
                         <div className="space-y-3 text-sm">
                            <p><span className="font-semibold">Nome:</span> {selectedUser.name}</p>
-                           <p><span className="font-semibold">ID:</span> {selectedUser.id}</p>
                            <p><span className="font-semibold">Cargo Atual:</span> {roleNames[selectedUser.role]}</p>
                         </div>
                         <div className="mt-4">
@@ -301,6 +354,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                                 className="w-full bg-transparent border border-brand-gold/30 dark:border-dark-icon rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-brand-gold dark:focus:ring-dark-accent"
                             >
                                 <option value="member">Membro</option>
+                                <option value="assistant">Assistente</option>
                                 <option value="admin">Administrativo</option>
                             </select>
                         </div>
@@ -316,10 +370,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[70] p-4" onClick={() => setShowHierarchyConfirm(false)}>
                      <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-lg font-bold text-brand-text dark:text-dark-accent mb-2">Confirmação Necessária</h3>
-                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">
-                            Tem certeza de que deseja alterar o nível de acesso deste usuário?
-                            Essa ação só pode ser feita pelo Presidente (Acesso Master).
-                        </p>
+                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">Tem certeza de que deseja alterar o nível de acesso deste usuário?</p>
                         <div className="flex justify-center gap-4">
                              <button onClick={() => setShowHierarchyConfirm(false)} className="px-6 py-2 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600">Cancelar</button>
                              <PrimaryButton onClick={handleConfirmHierarchyChange}>Confirmar</PrimaryButton>
@@ -328,20 +379,71 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                 </div>
              )}
 
-             {/* Reset Password Confirmation Modal */}
              {showResetConfirm && selectedUser && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[70] p-4" onClick={() => setShowResetConfirm(false)}>
                      <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-lg font-bold text-brand-text dark:text-dark-accent mb-2">Resetar Senha?</h3>
-                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">
-                            A senha de <strong>{selectedUser.name}</strong> será redefinida para o padrão (<strong>{TEMP_PASSWORD}</strong>) e o usuário será obrigado a trocá-la no próximo acesso.
-                        </p>
+                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">A senha de <strong>{selectedUser.name}</strong> será redefinida para <strong>{TEMP_PASSWORD}</strong> e o usuário será obrigado a trocá-la no próximo acesso.</p>
                         <div className="flex justify-center gap-4">
                              <button onClick={() => setShowResetConfirm(false)} className="px-6 py-2 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600">Cancelar</button>
                              <PrimaryButton onClick={handleResetPassword}>Confirmar Reset</PrimaryButton>
                         </div>
                      </div>
                 </div>
+             )}
+
+             {showBlockConfirm && selectedUser && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[70] p-4" onClick={() => setShowBlockConfirm(false)}>
+                     <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-yellow-600 mb-2">Bloquear/Reativar Acesso?</h3>
+                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">Você está prestes a alterar o status de <strong>{selectedUser.name}</strong> para <strong>{selectedUser.status === 'Desativado' ? 'Ativo' : 'Desativado'}</strong>.</p>
+                        <div className="flex justify-center gap-4">
+                             <button onClick={() => setShowBlockConfirm(false)} className="px-6 py-2 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600">Cancelar</button>
+                             <button onClick={handleBlockUser} className="px-6 py-2 rounded-md text-sm font-semibold bg-yellow-500 text-white hover:bg-yellow-600">Confirmar</button>
+                        </div>
+                     </div>
+                </div>
+             )}
+
+             {showDeleteConfirm && selectedUser && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[70] p-4" onClick={() => setShowDeleteConfirm(false)}>
+                     <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-red-600 mb-2">Excluir Membro?</h3>
+                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">Esta ação é <strong>permanente</strong> e não pode ser desfeita. Tem certeza de que deseja excluir <strong>{selectedUser.name}</strong>?</p>
+                        <div className="flex justify-center gap-4">
+                             <button onClick={() => setShowDeleteConfirm(false)} className="px-6 py-2 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600">Cancelar</button>
+                             <button onClick={handleDeleteUser} className="px-6 py-2 rounded-md text-sm font-semibold bg-red-500 text-white hover:bg-red-600">Excluir Permanentemente</button>
+                        </div>
+                     </div>
+                </div>
+             )}
+
+             {showHistoryModal && selectedUser && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setShowHistoryModal(false)}>
+                     <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl p-6 w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Histórico de Ações - {selectedUser.name}</h3>
+                         <div className="max-h-96 overflow-y-auto pr-2">
+                             {userHistory.length > 0 ? (
+                                 <ul className="space-y-3">
+                                     {userHistory.map(log => (
+                                         <li key={log.id} className="p-3 bg-brand-gold/5 dark:bg-dark-icon/10 rounded-md border-l-4 border-brand-gold">
+                                            <p className="font-bold">{log.action}</p>
+                                            <p className="text-sm text-brand-text/80 dark:text-dark-text-soft">{log.details}</p>
+                                            <p className="text-xs text-brand-text/60 dark:text-dark-text-soft/60 mt-1">
+                                                Por: {log.responsibleAdminName} em {new Date(log.timestamp).toLocaleString()}
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                             ) : (
+                                <p className="text-center text-sm text-brand-text/70 dark:text-dark-text-soft/70 p-4">Nenhuma ação registrada para este usuário.</p>
+                             )}
+                         </div>
+                         <div className="mt-6 flex justify-end">
+                            <PrimaryButton onClick={() => setShowHistoryModal(false)}>Fechar</PrimaryButton>
+                        </div>
+                     </div>
+                 </div>
              )}
         </>
     );

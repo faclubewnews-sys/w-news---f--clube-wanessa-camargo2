@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ButterflyIcon } from './components/ButterflyIcon';
 import { InputField } from './components/InputField';
@@ -9,6 +8,8 @@ import { ContactModal } from './components/ContactModal';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 import { ForgotPasswordModal } from './components/ForgotPasswordModal';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
+import { TermsScreen } from './components/TermsScreen';
+import { WelcomeModal } from './components/WelcomeModal';
 
 function App() {
   const [email, setEmail] = useState('');
@@ -28,6 +29,10 @@ function App() {
 
   // State to trigger re-renders in child components (like Gallery) when data changes
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+
+  // New states for terms and welcome flow
+  const [userForTerms, setUserForTerms] = useState<User | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -62,29 +67,20 @@ function App() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError(''); // Reset error on new attempt
+    setLoginError('');
 
-    // CRITICAL: Refresh users from storage before login to ensure we have the latest passwords/data
-    // This guarantees validation against persistent storage, not stale memory.
     const currentUsers = refreshUsersFromStorage();
-
-    // Clean input to avoid hidden spaces from mobile keyboards
-    // STRICT TRIM is crucial for mobile copy-paste
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
-
-    // Debug log for development (safe to remove in prod, but helpful now)
-    console.log(`[LOGIN ATTEMPT] Email: ${cleanEmail}`);
-
-    // STRICT CHECK
+    
     const foundUser = currentUsers.find(
       user => user.email.trim().toLowerCase() === cleanEmail && user.password === cleanPassword
     );
 
     if (foundUser) {
-      console.log(`[LOGIN SUCCESS] User found: ${foundUser.email}`);
-      // Check if user is using temp password or flag is set
-      if (foundUser.mustChangePassword || foundUser.password === TEMP_PASSWORD) {
+      if (!foundUser.hasAcceptedTerms) {
+        setUserForTerms(foundUser);
+      } else if (foundUser.mustChangePassword || foundUser.password === TEMP_PASSWORD) {
           setPendingUser(foundUser);
           setChangePasswordOpen(true);
       } else {
@@ -93,54 +89,67 @@ function App() {
           setPassword('');
       }
     } else {
-      console.warn(`[LOGIN FAILED] Invalid credentials for: ${cleanEmail}`);
       setLoginError('E-mail ou senha inválidos. Tente novamente.');
+    }
+  };
+
+  const handleAcceptTerms = () => {
+      if (userForTerms) {
+          const updatedUser = { ...userForTerms, hasAcceptedTerms: true, lastModified: Date.now() };
+          updateUserInStorage(updatedUser);
+          setUserForTerms(updatedUser); // Keep the updated user object
+          setShowWelcome(true);
+      }
+  };
+
+  const handleCloseWelcome = () => {
+    if (userForTerms) {
+      setShowWelcome(false);
+      // Now proceed with the post-term-acceptance login flow
+      if (userForTerms.mustChangePassword || userForTerms.password === TEMP_PASSWORD) {
+        setPendingUser(userForTerms);
+        setChangePasswordOpen(true);
+      } else {
+        setLoggedInUser(userForTerms);
+        setEmail('');
+        setPassword('');
+      }
+      setUserForTerms(null); // Clear the temporary user
     }
   };
 
   const handlePasswordChanged = (newPassword: string) => {
       if (pendingUser) {
-          // Create a new object to ensure state updates cleanly and persists correctly
           const updatedUser = { 
               ...pendingUser, 
               password: newPassword, 
               mustChangePassword: false,
-              resetToken: undefined // Clear any tokens
+              resetToken: undefined 
           };
-
-          // 1. Persist changes to global storage immediately (Single Source of Truth)
-          // This calls 'saveUsersToStorage' internally
           updateUserInStorage(updatedUser);
-          
-          // 2. Update local state with the new persistent object
           setLoggedInUser(updatedUser);
           setPendingUser(null);
           setChangePasswordOpen(false);
           setEmail('');
           setPassword('');
-          
-          // 3. Force refresh of global list just to be safe
           refreshUsersFromStorage();
-          console.log(`[PASSWORD CHANGE] Password updated for ${updatedUser.email}`);
       }
   };
 
   const handleCancelPasswordChange = () => {
       setPendingUser(null);
       setChangePasswordOpen(false);
-      setPassword(''); // Clear password field for security
+      setPassword(''); 
   };
   
   const handleLogout = () => {
     setLoggedInUser(null);
   };
 
-  // Handle Forgot Password Logic - NOW JUST A MESSAGE
   const handleForgotPasswordClose = () => {
       setForgotPasswordOpen(false);
   };
 
-  // Handle Reset Password Logic (From Link)
   const handleResetPasswordSubmit = (newPassword: string) => {
       if (resettingUser) {
           const updatedResetUser = {
@@ -149,28 +158,18 @@ function App() {
               mustChangePassword: false,
               resetToken: undefined
           };
-
           updateUserInStorage(updatedResetUser);
-
           alert("Senha alterada com sucesso! Você pode fazer login agora.");
           setResettingUser(null);
-          // Clean URL
           window.history.replaceState({}, document.title, "/");
       }
   };
 
-  // Function to handle updates from child components
   const handleUserUpdate = (updatedFields: Partial<User>) => {
     if (!loggedInUser) return;
-
-    // 1. Update the loggedInUser state locally
     const updatedUser = { ...loggedInUser, ...updatedFields };
     setLoggedInUser(updatedUser);
-
-    // 2. Persist to global storage array and LocalStorage using the helper
     updateUserInStorage(updatedUser);
-
-    // 3. Trigger global refresh for components listening to data changes (e.g. CommunityGallery)
     setLastUpdate(Date.now());
   };
 
@@ -193,6 +192,16 @@ function App() {
         />
       </>
     );
+  }
+
+  // Render Terms screen
+  if (userForTerms && !showWelcome) {
+      return <TermsScreen onAccept={handleAcceptTerms} />;
+  }
+  
+  // Render Welcome modal after terms
+  if (userForTerms && showWelcome) {
+      return <WelcomeModal onClose={handleCloseWelcome} />;
   }
 
   return (

@@ -3,7 +3,7 @@ export interface User {
   email: string;
   password?: string;
   name: string;
-  role: 'master' | 'admin' | 'member';
+  role: 'master' | 'admin' | 'member' | 'assistant';
   subtitle?: string; // Novo campo para "Equipe Wanessa"
   rg: string;
   cpf: string;
@@ -36,6 +36,8 @@ export interface User {
     endDate: string; // YYYY-MM-DD
   };
   lastModified?: number; 
+  hasAcceptedTerms?: boolean;
+  hasMetWanessa?: 'Sim' | 'Não' | 'Não informado';
 }
 
 export interface GiveawayEntry {
@@ -128,6 +130,7 @@ const defaultUsers: User[] = [
     socials: { instagram: '@heitorpinheiro.art', twitter: '@heitorpinheiro' },
     profilePic: 'https://i.ibb.co/C0v1b2y/Design-sem-nome-11.png',
     cardId: 'WC291843', status: 'Ativo', mustChangePassword: true,
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: 'WC502911',
@@ -142,6 +145,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: '', state: '',
     registrationDate: '2025-10-15', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: 'WC502911', status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: 'WC813452',
@@ -155,6 +159,20 @@ const defaultUsers: User[] = [
     registrationDate: '2025-01-01',
     socials: { instagram: '', twitter: '' },
     profilePic: defaultProfilePic, cardId: 'WC813452', status: 'Ativo', mustChangePassword: true,
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
+  },
+  {
+    id: 'WC112233',
+    email: 'assistente@wnews.com',
+    password: TEMP_PASSWORD,
+    name: 'Carlos Assistente',
+    role: 'assistant',
+    rg: 'Não informado', cpf: 'Não informado', phone: 'Não informado', dob: 'Não informado',
+    address: 'Não informado', city: 'Não informado', state: 'Não informado',
+    registrationDate: '2025-01-01',
+    socials: { instagram: '', twitter: '' },
+    profilePic: defaultProfilePic, cardId: 'WC112233', status: 'Ativo', mustChangePassword: true,
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   // Membros da Planilha
   {
@@ -170,6 +188,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'Guilhermina', state: '',
     registrationDate: '2025-10-17', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -184,6 +203,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'Mogi das Cruzes', state: '',
     registrationDate: '2025-10-17', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -198,6 +218,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'São Paulo', state: 'SP',
     registrationDate: '2025-10-17', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
    {
     id: generateId(),
@@ -212,6 +233,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: '', state: '',
     registrationDate: '2025-10-17', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -226,6 +248,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'Diadema', state: 'SP',
     registrationDate: '2025-10-16', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -240,6 +263,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'Diadema', state: 'SP',
     registrationDate: '2025-10-16', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -254,6 +278,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'São Paulo', state: 'SP',
     registrationDate: '2025-10-16', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
    {
     id: generateId(),
@@ -268,6 +293,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'São Paulo', state: 'SP',
     registrationDate: '2025-10-16', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -282,6 +308,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: '', state: '',
     registrationDate: '2025-10-16', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
    {
     id: generateId(),
@@ -296,6 +323,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'Jundiaí', state: 'SP',
     registrationDate: '2025-10-15', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -310,6 +338,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: '', state: '',
     registrationDate: '2025-10-15', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
    {
     id: generateId(),
@@ -324,6 +353,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'Belo Horizonte', state: 'MG',
     registrationDate: '2025-10-15', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -338,6 +368,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'Praia Grande', state: 'SP',
     registrationDate: '2025-10-18', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
    {
     id: generateId(),
@@ -352,6 +383,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'São Bernardo do Campo', state: 'SP',
     registrationDate: '2025-11-14', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -366,6 +398,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: '', state: '',
     registrationDate: '2025-11-17', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
   {
     id: generateId(),
@@ -380,6 +413,7 @@ const defaultUsers: User[] = [
     rg: 'Não informado', city: 'São Paulo', state: 'SP',
     registrationDate: '2025-11-25', password: TEMP_PASSWORD, mustChangePassword: true,
     profilePic: defaultProfilePic, cardId: usedIds.values().next().value, status: 'Ativo',
+    hasAcceptedTerms: false, hasMetWanessa: 'Não informado',
   },
 ];
 
@@ -519,3 +553,19 @@ export const getCamarimStatus = (user: User) => {
         isBlocked: false,
     };
 };
+export function addUserToStorage(newUser: Omit<User, 'id' | 'password' | 'mustChangePassword' | 'status' | 'cardId' | 'registrationDate' | 'profilePic'>): User {
+  const fullUser: User = {
+    ...newUser,
+    id: generateId(),
+    password: TEMP_PASSWORD,
+    mustChangePassword: true,
+    status: 'Ativo',
+    cardId: generateId(), 
+    registrationDate: new Date().toISOString().split('T')[0],
+    profilePic: defaultProfilePic,
+  };
+
+  mockUsers.push(fullUser);
+  saveUsersToStorage(mockUsers);
+  return fullUser;
+}

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { User, mockNotifications } from '../data/mockData';
 import { ButterflyIcon } from './ButterflyIcon';
@@ -19,6 +20,7 @@ const getRoleName = (user: User): string => {
   switch (user.role) {
     case 'master': return 'Presidente';
     case 'admin': return 'Vice-Presidente';
+    case 'assistant': return 'Assistente';
     case 'member': return 'Membro';
     default: return '';
   }

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { User, mockUsers, saveUsersToStorage, mockNotifications, mockAuditLog, AuditLogEntry, Notification } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
@@ -7,6 +6,23 @@ interface PendingRequestsProps {
   currentUser: User;
   onUpdate?: () => void; // Callback to refresh parent if needed
 }
+
+const fieldLabels: Record<string, string> = {
+    name: "Nome Completo",
+    dob: "Data de Nascimento",
+    cpf: "CPF",
+    rg: "RG",
+    email: "E-mail",
+    phone: "Telefone",
+    zipCode: "CEP",
+    street: "Rua",
+    address: "Endereço",
+    number: "Número",
+    complement: "Complemento",
+    city: "Cidade",
+    state: "Estado",
+    hasMetWanessa: "Conhece a Wanessa Pessoalmente?",
+};
 
 const DetailRow: React.FC<{ label: string, oldValue: any, newValue: any, isImage?: boolean }> = ({ label, oldValue, newValue, isImage }) => (
     <div className="grid grid-cols-3 gap-2 py-2 border-b border-brand-gold/10 dark:border-dark-icon/20 items-center">
@@ -128,6 +144,7 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, o
         if (!user.pendingChanges) return null;
         const changes = [];
         for (const key in user.pendingChanges) {
+            const label = fieldLabels[key] || key;
             if (key === 'socials') {
                  // @ts-ignore
                  const socialChanges = user.pendingChanges.socials;
@@ -140,7 +157,7 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, o
                  changes.push(<DetailRow key={key} label="Foto de Perfil" oldValue={user.profilePic} newValue={user.pendingChanges.profilePic} isImage={true} />);
             } else {
                  // @ts-ignore
-                 changes.push(<DetailRow key={key} label={key} oldValue={user[key as keyof User]} newValue={user.pendingChanges[key as keyof typeof user.pendingChanges]} />);
+                 changes.push(<DetailRow key={key} label={label} oldValue={user[key as keyof User]} newValue={user.pendingChanges[key as keyof typeof user.pendingChanges]} />);
             }
         }
         return changes;
@@ -176,7 +193,7 @@ export const PendingRequests: React.FC<PendingRequestsProps> = ({ currentUser, o
                                         {user.name}
                                     </td>
                                     <td className="p-3 text-xs text-brand-text/80 dark:text-dark-text-soft hidden md:table-cell">
-                                        {Object.keys(user.pendingChanges || {}).map(k => k === 'profilePic' ? 'Foto' : k).join(', ')}
+                                        {Object.keys(user.pendingChanges || {}).map(k => fieldLabels[k] || k).join(', ')}
                                     </td>
                                     <td className="p-3">
                                         <button onClick={() => setSelectedRequest(user)} className="text-sm font-semibold text-brand-accent dark:text-dark-accent hover:underline">

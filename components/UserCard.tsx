@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { User } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
@@ -73,16 +72,19 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   const canMasterEdit = currentUser.role === 'master';
   
   const getEditableStatus = (fieldName: keyof User | keyof User['socials']) => {
-    // Master can edit anyone
+    // Assistants can never edit.
+    if (currentUser.role === 'assistant') return false;
+
+    // Master can edit anyone.
     if (canMasterEdit) return true;
 
-    // Any user can edit ALL fields in their own profile
+    // Any user (except assistant) can edit ALL fields in their own profile.
     if (isOwnProfile) return true;
 
     // Admin editing others (Legacy logic for when Admin views other profiles)
     const nonSensitiveFields = [
         'phone', 'address', 'instagram', 'twitter', 'facebook', 'tiktok', 'lastfm', 'email',
-        'street', 'number', 'complement', 'zipCode', 'city', 'state'
+        'street', 'number', 'complement', 'zipCode', 'city', 'state', 'hasMetWanessa'
     ];
     
     if (currentUser.role === 'admin' && !isOwnProfile) {
@@ -92,7 +94,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   };
   
   const canViewSensitive = useMemo(() => {
-    if (currentUser.role === 'master' || isOwnProfile) return true;
+    if (currentUser.role === 'master' || isOwnProfile || currentUser.role === 'admin' || currentUser.role === 'assistant') return true;
     return false;
   }, [currentUser.role, isOwnProfile]);
 
@@ -108,8 +110,8 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
   };
   
   const handlePhotoClick = () => {
-      // Allow photo click if it's own profile or master/admin managing
-      if (isOwnProfile || canMasterEdit || currentUser.role === 'admin') {
+      // Allow photo click if it's own profile or master/admin managing, but never for assistant
+      if ((isOwnProfile || canMasterEdit || currentUser.role === 'admin') && currentUser.role !== 'assistant') {
           fileInputRef.current?.click();
       }
   };
@@ -247,7 +249,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
 
   const hasPendingChanges = user.pendingChanges && Object.keys(user.pendingChanges).length > 0;
   
-  const showSaveChanges = isOwnProfile || canMasterEdit || (currentUser.role === 'admin' && !isOwnProfile);
+  const showSaveChanges = (isOwnProfile || canMasterEdit || (currentUser.role === 'admin' && !isOwnProfile)) && currentUser.role !== 'assistant';
 
   const renderProfileData = () => (
     <div className="space-y-6">
@@ -261,6 +263,25 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
               {/* Email and Phone */}
               <ProfileField label="E-mail de Cadastro" value={userData.email} isEditable={getEditableStatus('email')} type="email" onChange={(v) => handleFieldChange('email', v)} />
               <ProfileField label="Telefone" value={userData.phone} isEditable={getEditableStatus('phone')} type="tel" onChange={(v) => handleFieldChange('phone', v)} />
+              
+              {/* NEW FIELD: hasMetWanessa */}
+              <div className="col-span-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-brand-text/60 dark:text-dark-text-soft/60 uppercase tracking-wider">Já conhece a Wanessa pessoalmente?</label>
+                  {getEditableStatus('hasMetWanessa') ? (
+                    <select
+                        value={userData.hasMetWanessa || 'Não informado'}
+                        onChange={(e) => handleFieldChange('hasMetWanessa', e.target.value)}
+                        className="w-full bg-transparent border-b-2 border-brand-gold/30 dark:border-dark-icon focus:border-brand-gold dark:focus:border-dark-accent focus:outline-none pt-1 text-brand-text dark:text-dark-text-soft"
+                    >
+                        <option value="Não informado">Não informado</option>
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                  ) : (
+                    <p className="text-brand-text dark:text-dark-text-soft pt-1 font-medium">{userData.hasMetWanessa || 'Não informado'}</p>
+                  )}
+              </div>
+              
               
               {/* Detailed Address Layout */}
               <div className="col-span-1 sm:col-span-2 mt-2 pt-4 border-t border-brand-gold/10 dark:border-dark-icon/20">
@@ -357,7 +378,7 @@ export const UserCard: React.FC<UserCardProps> = ({ user, currentUser, onUpdateU
                     alt={`Foto de ${userData.name}`} 
                     className="w-24 h-24 rounded-full object-cover ring-4 ring-brand-gold/50 dark:ring-dark-accent/50" 
                 />
-                { (isOwnProfile || canMasterEdit || currentUser.role === 'admin') && (
+                { (isOwnProfile || canMasterEdit || currentUser.role === 'admin') && currentUser.role !== 'assistant' && (
                      <>
                         <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
