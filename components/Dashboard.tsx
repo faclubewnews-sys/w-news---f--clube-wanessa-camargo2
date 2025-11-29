@@ -12,6 +12,8 @@ import { WanessaCamargoView } from './WanessaCamargoView';
 import { SorteiosView } from './SorteiosView';
 import { PushNotificationPanel } from './PushNotificationPanel';
 import { MandatoryNotifications } from './MandatoryNotifications';
+import { ContactHistoryView } from './ContactHistoryView';
+import { ContactUsManagement } from './ContactUsManagement';
 
 
 interface DashboardProps {
@@ -24,7 +26,7 @@ interface DashboardProps {
   lastUpdate: number;
 }
 
-export type ActiveView = 'home' | 'profile' | 'management' | 'card' | 'camarim' | 'wanessa' | 'sorteios' | 'push';
+export type ActiveView = 'home' | 'profile' | 'management' | 'card' | 'camarim' | 'wanessa' | 'sorteios' | 'push' | 'contactHistory' | 'messageManager';
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onToggleTheme, onContactClick, onUserUpdate, lastUpdate }) => {
   const [activeView, setActiveView] = useState<ActiveView>('home');
@@ -96,10 +98,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onT
         viewComponent = <CamarimView user={user} />;
         break;
       case 'wanessa':
-        viewComponent = <WanessaCamargoView />;
+        // FIX: Pass theme prop to fix error in child component
+        viewComponent = <WanessaCamargoView theme={theme} />;
         break;
       case 'sorteios':
         viewComponent = <SorteiosView user={user} />;
+        break;
+      case 'contactHistory':
+        viewComponent = <ContactHistoryView user={user} />;
+        break;
+      case 'messageManager':
+        if (user.role === 'master' || user.role === 'admin') {
+            viewComponent = <ContactUsManagement currentUser={user} />;
+        } else {
+             setActiveView('home');
+             return null;
+        }
         break;
       case 'push':
         if (user.role === 'master' || user.role === 'admin') {
@@ -156,7 +170,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, theme, onT
         <Sidebar 
           user={user}
           onNavigate={handleNavigate} 
-          onContactClick={onContactClick} 
+          onContactClick={onContactClick}
+          activeView={activeView} 
         />
         <div className="flex-1 flex flex-col" style={{ height: 'calc(100vh - 70px)' }}>
             <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-12 overflow-y-auto">

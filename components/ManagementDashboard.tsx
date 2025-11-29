@@ -5,12 +5,13 @@ import { BirthdayCalendar } from './BirthdayCalendar';
 import { PendingRequests } from './PendingRequests';
 import { CamarimControl } from './CamarimControl';
 import { MembersList } from './MembersList';
+import { ContactUsManagement } from './ContactUsManagement';
 
 interface ManagementDashboardProps {
   currentUser: User;
 }
 
-type ActiveView = 'meus-dados' | 'pendencias' | 'membros' | 'camarim';
+type ActiveView = 'meus-dados' | 'pendencias' | 'membros' | 'camarim' | 'mensagens';
 
 const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => void; }> = ({ label, isActive, onClick }) => (
   <button
@@ -75,6 +76,8 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
         return <MembersList currentUser={currentUser} />;
       case 'camarim':
         return <CamarimControl currentUser={currentUser} />;
+      case 'mensagens':
+        return <ContactUsManagement currentUser={currentUser} />;
       default:
         return null;
     }
@@ -88,6 +91,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
           <TabButton label="Pendências" isActive={activeView === 'pendencias'} onClick={() => setActiveView('pendencias')} />
           <TabButton label="Membros Cadastrados" isActive={activeView === 'membros'} onClick={() => setActiveView('membros')} />
           <TabButton label="Controle de Camarim" isActive={activeView === 'camarim'} onClick={() => setActiveView('camarim')} />
+          <TabButton label="Mensagens" isActive={activeView === 'mensagens'} onClick={() => setActiveView('mensagens')} />
         </div>
         <div>{renderActiveView()}</div>
       </div>

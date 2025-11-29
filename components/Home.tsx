@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, mockUsers } from '../data/mockData';
 import { ActiveView } from './Dashboard';
-import { UserCircleIcon, CardIcon, StarIcon, ShieldIcon, TicketIcon, MegaphoneIcon } from './icons/UiIcons';
+import { UserCircleIcon, CardIcon, StarIcon, ShieldIcon, TicketIcon, MegaphoneIcon, ChatBubbleIcon } from './icons/UiIcons';
 import { WhatsAppIcon, InstagramIcon, TwitterIcon, FacebookIcon, TiktokIcon } from './icons/SocialIcons';
 import { ButterflyIcon } from './ButterflyIcon';
 import { CommunityGallery } from './CommunityGallery';
@@ -26,7 +26,11 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, onClick }) => (
     className="flex flex-col items-center justify-center gap-3 p-4 bg-brand-bg-light/50 dark:bg-dark-bg-secondary/70 backdrop-blur-sm rounded-xl shadow-lg hover:bg-brand-gold/20 dark:hover:bg-dark-icon/50 transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-brand-gold dark:focus:ring-dark-accent"
     aria-label={`Acessar ${label}`}
   >
-    <div className="w-10 h-10 text-brand-accent dark:text-dark-accent">{icon}</div>
+    <div className="w-10 h-10 text-brand-accent dark:text-dark-accent">
+      {/* Clone element to enforce consistent sizing on all icons */}
+      {/* FIX: Cast icon to React.ReactElement with generic 'any' to resolve 'cloneElement' type error, allowing 'className' to be passed. */}
+      {React.cloneElement(icon as React.ReactElement<any>, { className: "w-full h-full" })}
+    </div>
     <span className="font-semibold text-sm text-brand-text dark:text-dark-text-soft">{label}</span>
   </button>
 );
@@ -38,7 +42,7 @@ export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, th
 
     const president = mockUsers.find(u => u.role === 'master');
     const vicePresident = mockUsers.find(u => u.role === 'admin');
-    const canManage = user.role === 'master' || user.role === 'admin';
+    const isAdminOrMaster = user.role === 'master' || user.role === 'admin';
 
     const socialLinks = [
         { href: 'https://www.instagram.com/faclubewnews/', icon: <InstagramIcon className="w-6 h-6" />, label: 'Instagram' },
@@ -98,8 +102,13 @@ export const Home: React.FC<HomeProps> = ({ user, onNavigate, onContactClick, th
                 <NavItem icon={<CardIcon />} label="Minha Carteirinha" onClick={() => onNavigate('card')} />
                 <NavItem icon={<TicketIcon />} label="Sorteios" onClick={() => onNavigate('sorteios')} />
                 <NavItem icon={<StarIcon />} label="Camarim" onClick={() => onNavigate('camarim')} />
+                {isAdminOrMaster ? (
+                    <NavItem icon={<ChatBubbleIcon />} label="Mensagens" onClick={() => onNavigate('messageManager')} />
+                ) : (
+                    <NavItem icon={<ChatBubbleIcon />} label="Minhas Mensagens" onClick={() => onNavigate('contactHistory')} />
+                )}
                 <NavItem icon={<ButterflyIcon />} label="Wanessa Camargo" onClick={() => onNavigate('wanessa')} />
-                {canManage && (
+                {isAdminOrMaster && (
                     <>
                         <NavItem icon={<MegaphoneIcon />} label="Envio de Push" onClick={() => onNavigate('push')} />
                         <NavItem icon={<ShieldIcon />} label="Administração" onClick={() => onNavigate('management')} />

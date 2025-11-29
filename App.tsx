@@ -189,7 +189,7 @@ function App() {
         <ContactModal 
           isOpen={isContactModalOpen} 
           onClose={() => setContactModalOpen(false)} 
-          userName={loggedInUser.name} 
+          user={loggedInUser} 
         />
       </>
     );

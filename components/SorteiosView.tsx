@@ -1,7 +1,5 @@
-
-
-import React, { useState } from 'react';
-import { User, mockGiveawayEntries, GiveawayEntry, mockUsers, mockNotifications } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { User, mockGiveawayEntries, GiveawayEntry, mockUsers, mockNotifications, getCamarimStatus } from '../data/mockData';
 import { PrimaryButton } from './PrimaryButton';
 
 interface SorteiosViewProps {
@@ -46,7 +44,7 @@ const ParticipantsList: React.FC = () => {
         const notificationTitle = status === 'won' ? 'Parabéns! Você ganhou o sorteio!' : 'Resultado do Sorteio';
         const notificationMessage = status === 'won' 
             ? `Você foi selecionado(a) no sorteio: ${entry.drawName} (${entry.category}). Entraremos em contato em breve!`
-            : `O resultado do sorteio ${entry.drawName} já saiu. Infelizmente você não foi sorteado(a) desta vez. Continue participando!`;
+            : `O resultado do sorteio ${entry.drawName} já saiu. Infelizmente você не foi sorteado(a) desta vez. Continue participando!`;
         
         mockNotifications.unshift({
             id: `NOT-${Date.now()}`,
@@ -225,7 +223,7 @@ const ParticipantsList: React.FC = () => {
                             {/* User Info Block */}
                             {(() => {
                                 const user = getParticipantDetails(selectedEntry.userId);
-                                if (!user) return <p>Usuário não encontrado.</p>;
+                                if (!user) return <p>Usuário не encontrado.</p>;
                                 
                                 return (
                                     <div className="space-y-4">
@@ -276,8 +274,20 @@ export const SorteiosView: React.FC<SorteiosViewProps> = ({ user }) => {
   const [selectedCategory, setSelectedCategory] = useState<SorteioCategory | ''>('');
   const [drawName, setDrawName] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  // FIX: Explicitly type the state to allow releaseDate to be optional, matching the return type of getCamarimStatus.
+  const [camarimStatus, setCamarimStatus] = useState<{ isBlocked: boolean; releaseDate?: string }>({ isBlocked: false, releaseDate: '' });
 
   const isAdminOrMaster = user.role === 'admin' || user.role === 'master';
+
+  useEffect(() => {
+    if (selectedCategory === 'Camarim') {
+      const status = getCamarimStatus(user);
+      setCamarimStatus(status);
+    } else {
+      setCamarimStatus({ isBlocked: false, releaseDate: '' });
+    }
+  }, [selectedCategory, user]);
+
 
   const categories: CategoryOption[] = [
     { 
@@ -304,7 +314,7 @@ export const SorteiosView: React.FC<SorteiosViewProps> = ({ user }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCategory || !drawName.trim()) return;
+    if (!selectedCategory || !drawName.trim() || camarimStatus.isBlocked) return;
     
     // Create new entry and push to mock data
     const newEntry: GiveawayEntry = {
@@ -392,6 +402,19 @@ export const SorteiosView: React.FC<SorteiosViewProps> = ({ user }) => {
 
             {/* 2. Camarim Warning */}
             {selectedCategory === 'Camarim' && (
+              camarimStatus.isBlocked ? (
+                <div className="p-4 bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 rounded-r-md animate-fade-in">
+                    <div className="flex gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600 dark:text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                        <div>
+                            <p className="text-sm font-bold text-red-800 dark:text-red-200">Inscrição Bloqueada</p>
+                            <p className="text-sm text-red-800/80 dark:text-red-200/80 mt-1">
+                                Você не pode se inscrever em sorteios de camarim no momento. Sua elegibilidade será restaurada em <span className="font-bold">{camarimStatus.releaseDate}</span>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+              ) : (
                 <div className="p-4 bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-500 rounded-r-md animate-fade-in">
                     <div className="flex gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600 dark:text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -405,6 +428,7 @@ export const SorteiosView: React.FC<SorteiosViewProps> = ({ user }) => {
                         </div>
                     </div>
                 </div>
+              )
             )}
 
             {/* 3. Draw Name Input */}
@@ -416,7 +440,7 @@ export const SorteiosView: React.FC<SorteiosViewProps> = ({ user }) => {
                     value={drawName}
                     onChange={(e) => setDrawName(e.target.value)}
                     placeholder={activeCategoryData ? activeCategoryData.placeholder : "Selecione uma categoria primeiro"}
-                    disabled={!selectedCategory}
+                    disabled={!selectedCategory || camarimStatus.isBlocked}
                     className="w-full bg-transparent border-b-2 border-brand-gold/30 focus:border-brand-gold text-brand-text placeholder-brand-text/50 px-2 py-3 transition-colors duration-300 focus:outline-none dark:border-dark-icon dark:focus:border-dark-accent dark:text-dark-text-soft dark:placeholder-dark-text-soft disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                 />
@@ -464,7 +488,7 @@ export const SorteiosView: React.FC<SorteiosViewProps> = ({ user }) => {
 
             {/* 5. Submit Button */}
             <div className="pt-4">
-                <PrimaryButton type="submit" disabled={!selectedCategory || !drawName.trim()}>
+                <PrimaryButton type="submit" disabled={!selectedCategory || !drawName.trim() || camarimStatus.isBlocked}>
                     Confirmar Participação
                 </PrimaryButton>
             </div>

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { User, mockCamarimWinners } from '../data/mockData';
+import { User, mockCamarimWinners, getCamarimStatus } from '../data/mockData';
 import { CamarimControl } from './CamarimControl';
 
 const Section: React.FC<{title: string, children: React.ReactNode}> = ({ title, children }) => (
@@ -11,32 +11,20 @@ const Section: React.FC<{title: string, children: React.ReactNode}> = ({ title, 
     </div>
 );
 
-const MemberCamarimView: React.FC<{ userId: string }> = ({ userId }) => {
+const MemberCamarimView: React.FC<{ user: User }> = ({ user }) => {
     const userHistory = useMemo(() => {
         return mockCamarimWinners
-            .filter(w => w.winnerId === userId)
+            .filter(w => w.winnerId === user.id)
             .sort((a, b) => new Date(b.drawDate).getTime() - new Date(a.drawDate).getTime());
-    }, [userId]);
+    }, [user.id]);
 
-    const lastWin = userHistory.length > 0 ? userHistory[0] : null;
-    let eligibilityStatus = { eligible: true, releaseDate: '' };
-
-    if (lastWin) {
-        const releaseDate = new Date(lastWin.drawDate);
-        releaseDate.setMonth(releaseDate.getMonth() + 6);
-        if (new Date() < releaseDate) {
-            eligibilityStatus = {
-                eligible: false,
-                releaseDate: releaseDate.toLocaleDateString('pt-BR'),
-            };
-        }
-    }
+    const eligibilityStatus = getCamarimStatus(user);
 
     return (
         <Section title="Meu Histórico de Camarim">
              <div className="bg-brand-gold/10 dark:bg-dark-icon/20 p-4 rounded-lg mb-6">
                 <h4 className="font-bold text-brand-text dark:text-dark-accent">Status de Elegibilidade</h4>
-                {eligibilityStatus.eligible ? (
+                {!eligibilityStatus.isBlocked ? (
                      <p className="text-green-600 font-semibold mt-1">Apto a participar dos próximos sorteios.</p>
                 ) : (
                     <div>
@@ -51,7 +39,7 @@ const MemberCamarimView: React.FC<{ userId: string }> = ({ userId }) => {
                 <ul className="space-y-4">
                     {userHistory.map(win => (
                         <li key={win.id} className="border-b border-brand-gold/20 dark:border-dark-icon/50 pb-3">
-                            <p className="font-semibold">Data do Sorteio: {new Date(win.drawDate).toLocaleDateString('pt-BR')}</p>
+                            <p className="font-semibold">Data do Sorteio: {new Date(win.drawDate + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
                             {win.observations && <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mt-1">Observações: {win.observations}</p>}
                         </li>
                     ))}
@@ -71,5 +59,5 @@ export const CamarimView: React.FC<CamarimViewProps> = ({ user }) => {
   if (user.role === 'admin' || user.role === 'master') {
     return <CamarimControl currentUser={user} />;
   }
-  return <MemberCamarimView userId={user.id} />;
+  return <MemberCamarimView user={user} />;
 };
