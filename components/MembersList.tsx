@@ -1,9 +1,8 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { User, mockUsers, mockAuditLog, AuditLogEntry, TEMP_PASSWORD, updateUserInStorage, saveUsersToStorage } from '../data/mockData';
 import { UserCard } from './UserCard';
 import { PrimaryButton } from './PrimaryButton';
+import { AddMemberModal } from './AddMemberModal';
 
 interface MembersListProps {
   currentUser: User;
@@ -53,6 +52,9 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
     const [statusFilter, setStatusFilter] = useState('');
     const [metWanessaFilter, setMetWanessaFilter] = useState('');
     
+    // State for the new Add Member modal
+    const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+
     // State to force list refresh after updates
     const [refreshKey, setRefreshKey] = useState(0);
     const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -225,12 +227,25 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
         setRefreshKey(prev => prev + 1);
     };
 
+    const handleMemberAdded = () => {
+        showFeedback("Novo membro adicionado com sucesso!");
+        setIsAddMemberModalOpen(false);
+        setRefreshKey(prev => prev + 1);
+    }
+
     const canManage = currentUser.role === 'master' || currentUser.role === 'admin';
 
     return (
         <>
             <div className="bg-brand-bg-light/50 dark:bg-dark-bg-secondary rounded-lg shadow-lg p-4 sm:p-6">
-                <h3 className="text-xl font-bold text-brand-text dark:text-dark-accent mb-4">Membros Cadastrados</h3>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+                    <h3 className="text-xl font-bold text-brand-text dark:text-dark-accent">Membros Cadastrados</h3>
+                    {canManage && (
+                        <div className="w-full sm:w-auto">
+                            <PrimaryButton onClick={() => setIsAddMemberModalOpen(true)}>Adicionar Membro</PrimaryButton>
+                        </div>
+                    )}
+                </div>
                 
                 {feedbackMessage && (
                      <div className="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded-md text-sm font-semibold shadow-sm animate-fade-in text-center">
@@ -302,6 +317,15 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                     </table>
                 </div>
             </div>
+
+            {canManage && (
+                <AddMemberModal 
+                    isOpen={isAddMemberModalOpen} 
+                    onClose={() => setIsAddMemberModalOpen(false)}
+                    onMemberAdded={handleMemberAdded}
+                />
+            )}
+
 
             {selectedUser && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelectedUser(null)}>
@@ -409,7 +433,7 @@ export const MembersList: React.FC<MembersListProps> = ({ currentUser }) => {
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[70] p-4" onClick={() => setShowDeleteConfirm(false)}>
                      <div className="bg-brand-bg-light dark:bg-dark-bg-secondary rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-lg font-bold text-red-600 mb-2">Excluir Membro?</h3>
-                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">Esta ação é <strong>permanente</strong> e não pode ser desfeita. Tem certeza de que deseja excluir <strong>{selectedUser.name}</strong>?</p>
+                        <p className="text-sm text-brand-text/80 dark:text-dark-text-soft mb-6">Esta ação é <strong>permanente</strong> e не pode ser desfeita. Tem certeza de que deseja excluir <strong>{selectedUser.name}</strong>?</p>
                         <div className="flex justify-center gap-4">
                              <button onClick={() => setShowDeleteConfirm(false)} className="px-6 py-2 rounded-md text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600">Cancelar</button>
                              <button onClick={handleDeleteUser} className="px-6 py-2 rounded-md text-sm font-semibold bg-red-500 text-white hover:bg-red-600">Excluir Permanentemente</button>

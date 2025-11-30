@@ -38,6 +38,7 @@ export interface User {
   lastModified?: number; 
   hasAcceptedTerms?: boolean;
   hasMetWanessa?: 'Sim' | 'Não' | 'Não informado';
+  termsAcceptedAt?: string; // ISO string for when terms were accepted
 }
 
 export interface GiveawayEntry {
