@@ -95,20 +95,21 @@ function App() {
 
   const handleAcceptTerms = () => {
       if (userForTerms) {
-          // FIX: Fetch latest user data before updating to prevent race conditions
-          // where this update might be overwritten by the subsequent password change flow.
-          const freshUsers = refreshUsersFromStorage();
-          const latestUserVersion = freshUsers.find(u => u.id === userForTerms.id);
-          if (!latestUserVersion) return; // Safety check
-
-          const updatedUser = { 
-              ...latestUserVersion, // Base update on the most current data
-              hasAcceptedTerms: true, 
-              termsAcceptedAt: new Date().toISOString() 
+          const updatePayload = {
+              id: userForTerms.id,
+              hasAcceptedTerms: true,
+              termsAcceptedAt: new Date().toISOString()
           };
-          updateUserInStorage(updatedUser);
-          setUserForTerms(updatedUser); // Keep the updated user object for the next step
-          setShowWelcome(true);
+          updateUserInStorage(updatePayload);
+          
+          // To proceed, we need the full updated user object
+          const freshUsers = refreshUsersFromStorage();
+          const updatedUser = freshUsers.find(u => u.id === userForTerms.id);
+          
+          if (updatedUser) {
+              setUserForTerms(updatedUser);
+              setShowWelcome(true);
+          }
       }
   };
 
@@ -130,24 +131,25 @@ function App() {
 
   const handlePasswordChanged = (newPassword: string) => {
       if (pendingUser) {
-          // To prevent race conditions, fetch the latest user data from storage
-          // before applying the password change. This ensures the 'hasAcceptedTerms' flag is not overwritten.
-          const freshUsers = refreshUsersFromStorage();
-          const latestUserVersion = freshUsers.find(u => u.id === pendingUser.id);
-          if (!latestUserVersion) return; // Safety check
-
-          const updatedUser = { 
-              ...latestUserVersion, // Base the update on the freshest data
-              password: newPassword, 
+          const updatePayload = {
+              id: pendingUser.id,
+              password: newPassword,
               mustChangePassword: false,
-              resetToken: undefined 
+              resetToken: undefined
           };
-          updateUserInStorage(updatedUser);
-          setLoggedInUser(updatedUser);
-          setPendingUser(null);
-          setChangePasswordOpen(false);
-          setEmail('');
-          setPassword('');
+          updateUserInStorage(updatePayload);
+          
+          // To log in, get the full updated user object
+          const freshUsers = refreshUsersFromStorage();
+          const updatedUser = freshUsers.find(u => u.id === pendingUser.id);
+          
+          if (updatedUser) {
+              setLoggedInUser(updatedUser);
+              setPendingUser(null);
+              setChangePasswordOpen(false);
+              setEmail('');
+              setPassword('');
+          }
       }
   };
 
@@ -167,13 +169,12 @@ function App() {
 
   const handleResetPasswordSubmit = (newPassword: string) => {
       if (resettingUser) {
-          const updatedResetUser = {
-              ...resettingUser,
+          updateUserInStorage({
+              id: resettingUser.id,
               password: newPassword, 
               mustChangePassword: false,
               resetToken: undefined
-          };
-          updateUserInStorage(updatedResetUser);
+          });
           alert("Senha alterada com sucesso! Você pode fazer login agora.");
           setResettingUser(null);
           window.history.replaceState({}, document.title, "/");
@@ -182,9 +183,14 @@ function App() {
 
   const handleUserUpdate = (updatedFields: Partial<User>) => {
     if (!loggedInUser) return;
-    const updatedUser = { ...loggedInUser, ...updatedFields };
-    setLoggedInUser(updatedUser);
-    updateUserInStorage(updatedUser);
+    updateUserInStorage({ ...updatedFields, id: loggedInUser.id });
+    
+    // Refresh logged in user from the source of truth
+    const freshUsers = refreshUsersFromStorage();
+    const refreshedUser = freshUsers.find(u => u.id === loggedInUser.id);
+    if(refreshedUser) {
+      setLoggedInUser(refreshedUser);
+    }
     setLastUpdate(Date.now());
   };
 
