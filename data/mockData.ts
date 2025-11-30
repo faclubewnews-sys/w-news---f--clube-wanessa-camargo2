@@ -448,11 +448,26 @@ export const saveUsersToStorage = (users: User[]) => {
   }
 };
 
-export const updateUserInStorage = (updatedUser: User) => {
-    const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
+export const updateUserInStorage = (updatedUser: Partial<User> & { id: string }) => {
+    // FIX: This function is now atomic. It reads the latest state from storage,
+    // applies the update, and then saves it back. This prevents race conditions
+    // where one update overwrites another.
+    const currentStorageUsers = refreshUsersFromStorage();
+    
+    const userIndex = currentStorageUsers.findIndex(u => u.id === updatedUser.id);
+    
     if (userIndex !== -1) {
-        const userWithTimestamp = { ...updatedUser, lastModified: Date.now() };
-        mockUsers[userIndex] = userWithTimestamp;
+        const existingUser = currentStorageUsers[userIndex];
+        
+        // Merge the incoming changes ONTO the latest version from storage.
+        const fullyUpdatedUser = { 
+            ...existingUser, 
+            ...updatedUser, 
+            lastModified: Date.now() 
+        };
+        
+        currentStorageUsers[userIndex] = fullyUpdatedUser;
+        mockUsers = currentStorageUsers; // Keep module state in sync
         saveUsersToStorage(mockUsers);
     } else {
         console.warn(`User with ID ${updatedUser.id} not found for update.`);
