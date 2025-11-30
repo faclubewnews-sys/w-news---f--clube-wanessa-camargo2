@@ -95,9 +95,19 @@ function App() {
 
   const handleAcceptTerms = () => {
       if (userForTerms) {
-          const updatedUser = { ...userForTerms, hasAcceptedTerms: true, lastModified: Date.now() };
+          // FIX: Fetch latest user data before updating to prevent race conditions
+          // where this update might be overwritten by the subsequent password change flow.
+          const freshUsers = refreshUsersFromStorage();
+          const latestUserVersion = freshUsers.find(u => u.id === userForTerms.id);
+          if (!latestUserVersion) return; // Safety check
+
+          const updatedUser = { 
+              ...latestUserVersion, // Base update on the most current data
+              hasAcceptedTerms: true, 
+              termsAcceptedAt: new Date().toISOString() 
+          };
           updateUserInStorage(updatedUser);
-          setUserForTerms(updatedUser); // Keep the updated user object
+          setUserForTerms(updatedUser); // Keep the updated user object for the next step
           setShowWelcome(true);
       }
   };
@@ -120,8 +130,14 @@ function App() {
 
   const handlePasswordChanged = (newPassword: string) => {
       if (pendingUser) {
+          // To prevent race conditions, fetch the latest user data from storage
+          // before applying the password change. This ensures the 'hasAcceptedTerms' flag is not overwritten.
+          const freshUsers = refreshUsersFromStorage();
+          const latestUserVersion = freshUsers.find(u => u.id === pendingUser.id);
+          if (!latestUserVersion) return; // Safety check
+
           const updatedUser = { 
-              ...pendingUser, 
+              ...latestUserVersion, // Base the update on the freshest data
               password: newPassword, 
               mustChangePassword: false,
               resetToken: undefined 
@@ -132,7 +148,6 @@ function App() {
           setChangePasswordOpen(false);
           setEmail('');
           setPassword('');
-          refreshUsersFromStorage();
       }
   };
 
